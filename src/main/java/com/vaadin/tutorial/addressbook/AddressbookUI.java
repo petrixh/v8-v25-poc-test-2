@@ -97,8 +97,8 @@ public class AddressbookUI extends HorizontalLayout {
 
         VerticalLayout left = new VerticalLayout(actions, contactList);
         left.setSizeFull();
-        // The Vaadin 8 layout margin (37 px, E002); Flow's padding has no size setting
-        left.getStyle().setPadding("37px");
+        // The Vaadin 8 layout margin (37 px, E002), through the layout's padding size property
+        left.getStyle().set("--vaadin-vertical-layout-padding", "37px");
         contactList.setSizeFull();
         left.setFlexGrow(1, contactList);
 
@@ -122,6 +122,8 @@ public class AddressbookUI extends HorizontalLayout {
      */
     void refreshContacts() {
         refreshContacts(filter.getValue());
+        // After Save the old grid resized its columns to the new content (not on filter change)
+        contactList.recalculateColumnWidths();
     }
 
     private void refreshContacts(String stringFilter) {
