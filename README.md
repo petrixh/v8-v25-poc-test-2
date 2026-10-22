@@ -14,7 +14,7 @@ Running the example from the command line
 $ mvn jetty:run
 ```
 
-Open [http://localhost:8080/](http://localhost:8080/). This runs Vaadin in development (debug) mode.
+Open [http://localhost:8080/](http://localhost:8080/). This runs Vaadin in development (debug) mode. Vaadin usage statistics are turned off for every `mvn jetty:run` (the Jetty plugin in `pom.xml` sets `vaadin.devmode.usageStatistics.enabled=false`).
 
 To build and run it in production mode, the way it is deployed:
 ```
