@@ -1,43 +1,35 @@
 package com.vaadin.tutorial.addressbook;
 
-import javax.servlet.annotation.WebServlet;
-
-import com.vaadin.annotations.Theme;
-import com.vaadin.annotations.Title;
-import com.vaadin.annotations.VaadinServletConfiguration;
-import com.vaadin.annotations.Widgetset;
-import com.vaadin.server.VaadinRequest;
-import com.vaadin.server.VaadinServlet;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
 import com.vaadin.tutorial.addressbook.backend.Contact;
 import com.vaadin.tutorial.addressbook.backend.ContactService;
-import com.vaadin.ui.Button;
-import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.UI;
-import com.vaadin.ui.VerticalLayout;
-import com.vaadin.v7.data.util.BeanItemContainer;
-import com.vaadin.v7.ui.Grid;
-import com.vaadin.v7.ui.TextField;
 
 /* User Interface written in Java.
  *
- * Define the user interface shown on the Vaadin generated web page by extending the UI class.
- * By default, a new UI instance is automatically created when the page is loaded. To reuse
+ * Define the user interface shown on the Vaadin generated web page as a route view.
+ * By default, a new view instance is automatically created when the page is loaded. To reuse
  * the same instance, add @PreserveOnRefresh.
  */
-@Title("Addressbook")
-@Theme("valo")
-@Widgetset("com.vaadin.v7.Vaadin7WidgetSet")
-public class AddressbookUI extends UI {
+@Route("")
+@PageTitle("Addressbook")
+public class AddressbookUI extends HorizontalLayout {
 
     /*
      * Hundreds of widgets. Vaadin's user interface components are just Java
      * objects that encapsulate and handle cross-browser support and
      * client-server communication. The default Vaadin components are in the
-     * com.vaadin.ui package and there are over 500 more in
+     * com.vaadin.flow.component packages and there are over 500 more in
      * vaadin.com/directory.
      */
     TextField filter = new TextField();
-    Grid contactList = new Grid();
+    Grid<Contact> contactList = new Grid<>(Contact.class);
     Button newContact = new Button("New contact");
 
     // ContactForm is an example of a custom component class
@@ -51,12 +43,11 @@ public class AddressbookUI extends UI {
     /*
      * The "Main method".
      *
-     * This is the entry point method executed to initialize and configure the
+     * This is the entry point executed to initialize and configure the
      * visible user interface. Executed on every browser reload because a new
      * instance is created for each web page loaded.
      */
-    @Override
-    protected void init(VaadinRequest request) {
+    public AddressbookUI() {
         configureComponents();
         buildLayout();
     }
@@ -71,18 +62,14 @@ public class AddressbookUI extends UI {
          */
         newContact.addClickListener(e -> contactForm.edit(new Contact()));
 
-        filter.setInputPrompt("Filter contacts...");
-        filter.addTextChangeListener(e -> refreshContacts(e.getText()));
+        filter.setPlaceholder("Filter contacts...");
+        filter.setValueChangeMode(ValueChangeMode.LAZY);
+        filter.addValueChangeListener(e -> refreshContacts(e.getValue()));
 
-        contactList
-                .setContainerDataSource(new BeanItemContainer<>(Contact.class));
-        contactList.setColumnOrder("firstName", "lastName", "email");
-        contactList.removeColumn("id");
-        contactList.removeColumn("birthDate");
-        contactList.removeColumn("phone");
+        contactList.setColumns("firstName", "lastName", "email");
         contactList.setSelectionMode(Grid.SelectionMode.SINGLE);
         contactList.addSelectionListener(
-                e -> contactForm.edit((Contact) contactList.getSelectedRow()));
+                e -> contactForm.edit(contactList.asSingleSelect().getValue()));
         refreshContacts();
     }
 
@@ -101,19 +88,19 @@ public class AddressbookUI extends UI {
         HorizontalLayout actions = new HorizontalLayout(filter, newContact);
         actions.setWidth("100%");
         filter.setWidth("100%");
-        actions.setExpandRatio(filter, 1);
+        actions.setFlexGrow(1, filter);
 
         VerticalLayout left = new VerticalLayout(actions, contactList);
         left.setSizeFull();
         contactList.setSizeFull();
-        left.setExpandRatio(contactList, 1);
+        left.setFlexGrow(1, contactList);
 
-        HorizontalLayout mainLayout = new HorizontalLayout(left, contactForm);
-        mainLayout.setSizeFull();
-        mainLayout.setExpandRatio(left, 1);
+        // This view is the main layout
+        setSizeFull();
+        setFlexGrow(1, left);
 
         // Split and allow resizing
-        setContent(mainLayout);
+        add(left, contactForm);
     }
 
     /*
@@ -129,21 +116,8 @@ public class AddressbookUI extends UI {
     }
 
     private void refreshContacts(String stringFilter) {
-        contactList.setContainerDataSource(new BeanItemContainer<>(
-                Contact.class, service.findAll(stringFilter)));
+        contactList.setItems(service.findAll(stringFilter));
         contactForm.setVisible(false);
-    }
-
-    /*
-     * Deployed as a Servlet or Portlet.
-     *
-     * You can specify additional servlet parameters like the URI and UI class
-     * name and turn on production mode when you have finished developing the
-     * application.
-     */
-    @WebServlet(urlPatterns = "/*")
-    @VaadinServletConfiguration(ui = AddressbookUI.class, productionMode = false)
-    public static class MyUIServlet extends VaadinServlet {
     }
 
 }
