@@ -24,6 +24,14 @@ $ mvn jetty:run-war    # builds the war and runs it on Jetty
 
 Vaadin 25 decides production mode at build time: the war is built with the production frontend bundle and without the optional `vaadin-dev` dependency. No Vaadin licence key is needed; the app uses only the free `vaadin-core` components.
 
+Running the tests
+-------------------
+```
+$ mvn test
+```
+
+JUnit 6 unit tests of the in-memory backend (`src/test/java`): `ContactService` stores and returns copies, and the 100 demo contacts match the original app's (`src/test/resources/.../demo-contacts.csv`). Maven runs them in UTC and en-US whatever the host's settings (surefire `argLine` in `pom.xml`). `mvn package` runs them too.
+
 Reproducible environment
 -------------------
 With Docker, one command builds and starts a copy of the app in a known state (seed contacts, Vaadin production mode):
