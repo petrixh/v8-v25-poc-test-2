@@ -8,6 +8,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.tutorial.addressbook.backend.Contact;
 import com.vaadin.tutorial.addressbook.backend.ContactService;
 
@@ -18,6 +19,8 @@ import com.vaadin.tutorial.addressbook.backend.ContactService;
  * the same instance, add @PreserveOnRefresh.
  */
 @Route("")
+// Any other path shows the same screen, as the old servlet mapped to /*
+@RouteAlias(":path*")
 @PageTitle("Addressbook")
 public class AddressbookUI extends HorizontalLayout {
 
