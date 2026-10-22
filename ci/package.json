@@ -1,0 +1,11 @@
+{
+  "name": "addressbook-ci-smoke",
+  "private": true,
+  "description": "Browser smoke check run by CI against the started app (see ci/README.md)",
+  "scripts": {
+    "smoke": "node smoke.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}
