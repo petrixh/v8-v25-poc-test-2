@@ -53,8 +53,8 @@
             <version>6.1.0</version>
             <scope>provided</scope>
         </dependency>
-        <!-- The huge set of awesome Java libraries are available as such
-            for Vaadin developers, you should take the advantage of those. In this app
+        <!-- The huge set of awesome Java libraries are available as such 
+            for Vaadin developers, you should take the advantage of those. In this app 
             we just use the commons-beanutils to help implementing the fake backend. -->
         <dependency>
             <groupId>commons-beanutils</groupId>
@@ -70,11 +70,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.14.1</version>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-war-plugin</artifactId>
-                <version>3.4.0</version>
             </plugin>
             <!-- Production frontend bundle at `mvn package`: the war runs in production mode. -->
             <plugin>
