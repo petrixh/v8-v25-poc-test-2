@@ -14,6 +14,8 @@ import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.converter.LocalDateToDateConverter;
 import com.vaadin.tutorial.addressbook.backend.Contact;
 
+import java.time.LocalDate;
+
 /* Create custom UI Components.
  *
  * Create your own Vaadin components by inheritance and composition.
@@ -52,6 +54,15 @@ public class ContactForm extends FormLayout {
         save.addThemeVariants(ButtonVariant.PRIMARY);
         save.addClickShortcut(Key.ENTER);
         setVisible(false);
+
+        // Birth date as the Vaadin 8 DateField showed and read it in en-US:
+        // short year (6/11/59), typed two-digit years within 80 years before
+        // and 20 after today, four-digit years still accepted, and the same
+        // message for text that is not a date.
+        birthDate.setI18n(new DatePicker.DatePickerI18n()
+                .setDateFormats("M/d/yy", "M/d/yyyy")
+                .setReferenceDate(LocalDate.now().minusYears(30))
+                .setBadInputErrorMessage("Date format not recognized"));
 
         // Bind the properties of the contact POJO to fields in this form.
         // DatePicker holds a LocalDate; Contact keeps its java.util.Date.
