@@ -46,20 +46,15 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Cache Playwright browsers
-        id: pw-cache
         uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('ci/package-lock.json') }}
 
+      # Skips the download when the cached browser is there; always installs the OS packages it needs.
       - name: Install Chromium
         working-directory: ci
-        run: |
-          if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
-            npx playwright install-deps chromium
-          else
-            npx playwright install --with-deps chromium
-          fi
+        run: npx playwright install --with-deps chromium
 
       - name: Start app (production mode)
         run: ci/start-app.sh "$APP_PORT"
