@@ -10,47 +10,51 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>21</maven.compiler.release>
         <failOnMissingWebXml>false</failOnMissingWebXml>
-        <vaadin.version>8.14.5</vaadin.version>
-        <vaadin.plugin.version>${vaadin.version}</vaadin.plugin.version>
+        <vaadin.version>25.3.3</vaadin.version>
+        <jetty.version>12.1.14</jetty.version>
     </properties>
-    <repositories>
-        <!-- Essential Vaadin artifacts are in maven central, but maven.vaadin.com 
-            contains a huge set of additional libraries. See vaadin.com/directory -->
-        <repository>
-            <id>vaadin-addons</id>
-            <url>https://maven.vaadin.com/vaadin-addons</url>
-        </repository>
-    </repositories>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.vaadin</groupId>
+                <artifactId>vaadin-bom</artifactId>
+                <version>${vaadin.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
+        <!-- Free (Apache 2.0) Vaadin components only: no commercial components, no licence key. -->
         <dependency>
             <groupId>com.vaadin</groupId>
-            <artifactId>vaadin-compatibility-server</artifactId>
-            <version>${vaadin.version}</version>
+            <artifactId>vaadin-core</artifactId>
         </dependency>
+        <!-- Development mode. Optional: on the classpath for `mvn jetty:run`, left out of the war,
+             so the packaged war (`mvn package`, `mvn jetty:run-war`) runs in production mode. -->
         <dependency>
             <groupId>com.vaadin</groupId>
-            <artifactId>vaadin-compatibility-shared</artifactId>
-            <version>${vaadin.version}</version>
+            <artifactId>vaadin-dev</artifactId>
+            <optional>true</optional>
         </dependency>
-         <dependency>
-            <groupId>com.vaadin</groupId>
-            <artifactId>vaadin-compatibility-client-compiled</artifactId>
-            <version>${vaadin.version}</version>
+        <!-- SLF4J provider: Vaadin logs through SLF4J and logs nothing without one.
+             slf4j-simple writes to stderr (the server log); version from the Vaadin BOM. -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.vaadin</groupId>
-            <artifactId>vaadin-themes</artifactId>
-            <version>${vaadin.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <version>3.0.1</version>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>6.1.0</version>
             <scope>provided</scope>
         </dependency>
-        <!-- The huge set of awesome Java libraries are available as such 
-            for Vaadin developers, you should take the advantage of those. In this app 
+        <!-- The huge set of awesome Java libraries are available as such
+            for Vaadin developers, you should take the advantage of those. In this app
             we just use the commons-beanutils to help implementing the fake backend. -->
         <dependency>
             <groupId>commons-beanutils</groupId>
@@ -65,16 +69,32 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.2</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
+                <version>3.14.1</version>
             </plugin>
             <plugin>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-maven-plugin</artifactId>
-                <version>9.2.3.v20140905</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.4.0</version>
+            </plugin>
+            <!-- Production frontend bundle at `mvn package`: the war runs in production mode. -->
+            <plugin>
+                <groupId>com.vaadin</groupId>
+                <artifactId>vaadin-maven-plugin</artifactId>
+                <version>${vaadin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-frontend</goal>
+                            <goal>build-frontend</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- `mvn jetty:run`: development mode. `mvn jetty:run-war`: the production war. -->
+            <plugin>
+                <groupId>org.eclipse.jetty.ee11</groupId>
+                <artifactId>jetty-ee11-maven-plugin</artifactId>
+                <version>${jetty.version}</version>
             </plugin>
         </plugins>
     </build>
