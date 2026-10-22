@@ -27,8 +27,9 @@ COPY --chown=app:app pom.xml ./
 RUN mvn dependency:go-offline
 
 # Build the war (this also runs every plugin jetty:run and jetty:run-war use: resources,
-# compiler, vaadin prepare-frontend and build-frontend) and load the jetty plugin with all
-# its dependencies, so the start can be offline.
+# compiler, surefire with the unit tests, vaadin prepare-frontend and build-frontend) and load
+# the jetty plugin with all its dependencies, so the start can be offline. A failing test fails
+# the image build; jetty:run-war runs the tests again at every production start and reset.
 COPY --chown=app:app src ./src
 RUN mvn package jetty:help -Ddetail=false
 
