@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workflow walkthrough</title>
+<style>
+/* Walkthrough: workflow list with keyword search on the left (a selector on phones); the selected workflow as step
+   rows. Modes (data.mode): baseline (text | old), compare (text and checks | old | new), export (customer: text, then
+   an old | new pair; an overview page first). System fonts, relative image paths, no outside requests. */
+:root {
+  --bg: #f4f6f7; --surface: #fff; --sunk: #e9edef; --line: #d3dade; --fg: #1c2427; --muted: #5a676d;
+  --accent: #1f6770; --accent-soft: #dcecee; --pass: #26704a; --pass-soft: #dff0e6; --fail: #a8322b; --fail-soft: #f7e1df;
+  --warn: #8a5a00; --warn-soft: #fbf0d6; --shade: rgba(12, 18, 20, .88);
+  --body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #12181a; --surface: #192124; --sunk: #0f1416; --line: #2c373b; --fg: #e3e9eb; --muted: #95a3a8; --accent: #6fbcc5;
+    --accent-soft: #1d3438; --pass: #72c795; --pass-soft: #173226; --fail: #ee8a82; --fail-soft: #3a1d1b; --warn: #e6b659; --warn-soft: #33290f; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 var(--body); }
+code { font-family: var(--mono); font-size: .88em; background: var(--sunk); padding: 0 .15em; border-radius: 3px; overflow-wrap: anywhere; }
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.top { padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--surface); display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; font-size: 13px; color: var(--muted); }
+.top b { font-size: 15px; color: var(--fg); }
+.top .score { color: var(--pass); font-weight: 600; }
+.app { display: grid; grid-template-columns: 280px minmax(0, 1fr); align-items: start; }
+nav { position: sticky; top: 0; max-height: 100vh; overflow-y: auto; border-right: 1px solid var(--line); padding-block: 8px; background: var(--surface); }
+nav ol { list-style: none; margin: 0; padding: 0; }
+.search { padding: 4px 12px 8px 14px; }
+input[type=search] { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); font-size: 14px; }
+.cnt { display: block; font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+nav button { width: 100%; text-align: left; border: 0; background: transparent; cursor: pointer; display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 2px 8px; padding: 7px 12px 7px 14px; border-left: 3px solid transparent; }
+nav button:hover { background: var(--sunk); }
+nav button[aria-current="true"] { background: var(--accent-soft); border-left-color: var(--accent); }
+nav .id { font: 600 12.5px var(--mono); color: var(--accent); padding-top: 1px; overflow-wrap: anywhere; }
+nav .t { font-size: 13px; line-height: 1.3; min-width: 0; }
+nav .r { grid-column: 2; font-size: 11.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.chip { display: inline-block; font: 600 10.5px/1 var(--mono); letter-spacing: .06em; padding: 3px 6px 2px; border-radius: 3px; text-transform: uppercase; white-space: nowrap; background: var(--sunk); color: var(--muted); }
+.chip.pass { color: var(--pass); background: var(--pass-soft); }
+.chip.fail { color: var(--fail); background: var(--fail-soft); }
+.chip.accepted { color: var(--warn); background: var(--warn-soft); }
+.phonebar { display: none; }
+main { padding: 20px 28px 60px; min-width: 0; }
+.head { max-width: 80ch; display: grid; gap: 6px; }
+.eyebrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font: 600 12px var(--mono); color: var(--muted); }
+h1 { font-size: 26px; line-height: 1.2; margin: 0; text-wrap: balance; }
+h2 { font: 600 13px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 28px 0 10px; }
+.meta { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 8px 0 0; font-size: 14px; }
+.meta dt { color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; padding-top: 3px; }
+.meta dd { margin: 0; min-width: 0; }
+.pager { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+.pager button, .phonebar button { border: 1px solid var(--line); background: var(--surface); border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 13px; }
+.pager button:disabled, .phonebar button:disabled { opacity: .45; cursor: default; }
+.keys { color: var(--muted); font-size: 12px; }
+.note { max-width: 80ch; background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 8px 12px; font-size: 14px; margin: 8px 0; }
+.steps { display: grid; gap: 18px; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+@media (min-width: 1000px) { .m-baseline .step { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); } }
+@media (min-width: 1180px) { .m-compare .step { grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) minmax(0, 2fr); } }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+@media (max-width: 760px) { .pair { grid-template-columns: minmax(0, 1fr); } }
+.col { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.side { font: 600 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.num { font: 600 12px var(--mono); color: var(--accent); letter-spacing: .06em; }
+.steptext { margin: 0; }
+.missing { border: 1px dashed var(--line); border-radius: 3px; padding: 12px; font-size: 13px; color: var(--muted); background: var(--sunk); }
+.rec { border-top: 1px dashed var(--line); padding-top: 10px; display: grid; gap: 8px; min-width: 0; }
+.rec .line { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.rec .desc { font: 13px var(--mono); overflow-wrap: anywhere; }
+.lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.obs { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 10px; margin: 0; font: 12.5px/1.45 var(--mono); }
+.obs dt { color: var(--muted); max-width: 22ch; overflow-wrap: anywhere; }
+.obs dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.box { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 6px 10px; font-size: 12px; min-width: 0; }
+.box.err { background: var(--fail-soft); border-left-color: var(--fail); }
+.box pre { margin: 4px 0 0; font: 11.5px/1.45 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+figure { margin: 0; min-width: 0; }
+.shot { display: block; width: 100%; padding: 0; border: 1px solid var(--line); background: var(--sunk); cursor: zoom-in; border-radius: 3px; overflow: hidden; }
+.shot img { display: block; width: 100%; height: auto; }
+figcaption { font: 11.5px var(--mono); color: var(--muted); margin-top: 4px; }
+.m-export figcaption { font: 13px var(--body); }
+.extras { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 14px; }
+.prose { max-width: 80ch; font-size: 15px; }
+.prose h3 { font-size: 15px; margin: 14px 0 2px; }
+.prose p, .prose ul, .prose ol { margin: 0 0 8px; }
+.wftable { border-collapse: collapse; width: 100%; max-width: 100ch; font-size: 14px; }
+.wftable th, .wftable td { text-align: left; border-bottom: 1px solid var(--line); padding: 6px 8px; vertical-align: top; }
+.wftable a { color: var(--accent); }
+.wftable .chip { white-space: normal; }
+.tablewrap { overflow-x: auto; }
+.src { color: var(--muted); font: 12px var(--mono); margin-top: 16px; }
+.lightbox { position: fixed; inset: 0; z-index: 10; background: var(--shade); display: grid; place-items: center; padding: 16px; cursor: zoom-out; }
+.lightbox img { max-width: 100%; max-height: calc(100vh - 70px); }
+.lightbox .cap { color: #e3e9eb; font: 12px var(--mono); margin-top: 8px; text-align: center; }
+.lightbox .close { position: absolute; top: 10px; right: 12px; border: 1px solid #5a676d; background: #192124; color: #e3e9eb; border-radius: 4px; padding: 4px 10px; cursor: pointer; }
+@media (max-width: 760px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  nav { display: none; }
+  .phonebar { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+  .phonebar select { flex: 1; min-width: 0; padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); font-size: 14px; }
+  main { padding-inline: 16px; }
+  h1 { font-size: 22px; }
+  .step { padding: 12px; }
+  .keys { display: none; }
+}
+</style>
+</head>
+<body>
+<header class="top" id="top"></header>
+<div class="phonebar">
+  <input type="search" id="qm" placeholder="Search workflows" aria-label="Search workflows">
+  <button type="button" id="pprev" aria-label="Previous">Prev</button>
+  <select id="sel" aria-label="Workflow"></select>
+  <button type="button" id="pnext" aria-label="Next">Next</button>
+</div>
+<div class="app">
+  <nav aria-label="Workflows"><div class="search"><input type="search" id="q" placeholder="Search workflows" aria-label="Search workflows"><span class="cnt" id="qcnt"></span></div><ol id="list"></ol></nav>
+  <main id="main" tabindex="-1"></main>
+</div>
+<div class="lightbox" id="lb" hidden role="dialog" aria-modal="true" aria-label="Screenshot">
+  <button type="button" class="close" id="lbclose">Close (Esc)</button>
+  <div><img id="lbimg" alt=""><div class="cap" id="lbcap"></div></div>
+</div>
+<script type="application/json" id="data">{"mode": "export", "title": "Addressbook walkthrough: original and migrated", "workflows": [{"id": "AB01", "title": "Browse the contact list", "role": "Anonymous user, no login", "meta": [["Role / test user", "Anonymous user, no login (the app has none)"], ["Preconditions", "App freshly started (the 100 demo contacts only). Browser language English (United States)."], ["Known pre-existing behaviour", "All users share one contact list until the app restarts. The demo data is the same at every start"]], "sections": [{"name": "Checks on the saved data", "html": "<p>None: the list is read only here.<\/p>"}], "textSteps": [], "steps": [{"n": 1, "html": "Open the app: the page is titled \"Addressbook\" and shows a filter field, a \"New contact\" button and the contact list with the columns First Name, Last Name and Email. No contact form is shown.", "old": {"ok": true, "shots": [{"src": "img/old/AB01/step01.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB01/step01.jpg", "cap": "", "landing": false}]}}, {"n": 2, "html": "Look at the top of the list: the newest contacts come first, starting with George White (george@white.com), Daniel Thompson and Timothy Jones.", "old": {"ok": true, "shots": [{"src": "img/old/AB01/step02.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB01/step02.jpg", "cap": "", "landing": false}]}}, {"n": 3, "html": "Scroll to the end of the list: the last (oldest) contact is Peter Moore (peter@moore.com).", "old": {"ok": true, "shots": [{"src": "img/old/AB01/step03.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB01/step03.jpg", "cap": "", "landing": false}]}}, {"n": 4, "html": "Go back to the top of the list and sort it by last name: the list is in A to Z order by last name, starting with contacts named Anderson.", "old": {"ok": true, "shots": [{"src": "img/old/AB01/step04.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB01/step04.jpg", "cap": "About one more row is visible with the Lumo look (accepted with the choice of look); same order", "landing": false}]}}, {"n": 5, "html": "Sort by last name again: the order reverses, starting with contacts named Young.", "old": {"ok": true, "shots": [{"src": "img/old/AB01/step05.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB01/step05.jpg", "cap": "About one more row is visible with the Lumo look (accepted with the choice of look); same order", "landing": false}]}}], "extras": {}, "result": "PASS", "newResult": "PASS", "acceptedSteps": [], "at": null, "newAt": null, "file": null}, {"id": "AB02", "title": "Filter the contact list", "role": "Anonymous user, no login", "meta": [["Role / test user", "Anonymous user, no login (the app has none)"], ["Preconditions", "App freshly started (the 100 demo contacts only). Browser language English (United States)."], ["Known pre-existing behaviour", "The filter matches more than the visible columns: it also matches the phone number and the birth date, and words such as \"contact\" match every contact. The demo data is the same at every start"]], "sections": [{"name": "Checks on the saved data", "html": "<p>None: filtering does not change data.<\/p>"}], "textSteps": [], "steps": [{"n": 1, "html": "Type \"smith\" in the filter field: the list narrows as you type to 5 contacts, all with the last name Smith (Dan, Mike, Daniel, Lisa and Alice Smith).", "old": {"ok": true, "shots": [{"src": "img/old/AB02/step01.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB02/step01.jpg", "cap": "", "landing": false}]}}, {"n": 2, "html": "Replace the filter with \"SMITH\": the same 5 contacts are listed (the filter ignores upper and lower case).", "old": {"ok": true, "shots": [{"src": "img/old/AB02/step02.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB02/step02.jpg", "cap": "", "landing": false}]}}, {"n": 3, "html": "Replace the filter with \"853\": only George White is listed, although phone numbers are not shown in the list (his phone is + 358 555 853).", "old": {"ok": true, "shots": [{"src": "img/old/AB02/step03.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB02/step03.jpg", "cap": "", "landing": false}]}}, {"n": 4, "html": "Replace the filter with \"zzz\": the list is empty, with no message.", "old": {"ok": true, "shots": [{"src": "img/old/AB02/step04.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB02/step04.jpg", "cap": "", "landing": false}]}}, {"n": 5, "html": "Clear the filter field: the full list is back, starting with George White, Daniel Thompson and Timothy Jones.", "old": {"ok": true, "shots": [{"src": "img/old/AB02/step05.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB02/step05.jpg", "cap": "About one more row is visible with the Lumo look (accepted with the choice of look); same first contacts", "landing": false}]}}, {"n": 6, "html": "Type \"contact\" in the filter field: every contact is still listed, starting with George White (known pre-existing behaviour).", "old": {"ok": true, "shots": [{"src": "img/old/AB02/step06.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB02/step06.jpg", "cap": "", "landing": false}]}}, {"n": 7, "html": "Clear the filter, open George White, then type \"dan\" in the filter field: the contact form closes and the list shows only contacts matching \"dan\", such as Dan Robinson and Daniel Thompson.", "old": {"ok": true, "shots": [{"src": "img/old/AB02/step07.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB02/step07.jpg", "cap": "", "landing": false}]}}], "extras": {}, "result": "PASS", "newResult": "PASS", "acceptedSteps": [], "at": null, "newAt": null, "file": null}, {"id": "AB03", "title": "Open a contact and close it again", "role": "Anonymous user, no login", "meta": [["Role / test user", "Anonymous user, no login (the app has none)"], ["Preconditions", "App freshly started (the 100 demo contacts only). Browser language English (United States)."], ["Known pre-existing behaviour", "The demo data is the same at every start"]], "sections": [{"name": "Checks on the saved data", "html": "<p>None: nothing is changed.<\/p>"}], "textSteps": [], "steps": [{"n": 1, "html": "Select George White in the list: his row is highlighted and the contact form opens beside the list with Save and Cancel and his details: First name George, Last name White, Phone + 358 555 853, Email george@white.com, Birth date 6/11/59. The cursor is in the First name field.", "old": {"ok": true, "shots": [{"src": "img/old/AB03/step01.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB03/step01.jpg", "cap": "", "landing": false}]}}, {"n": 2, "html": "Select Peter Wilson in the list: the form now shows Peter Wilson, Phone + 358 555 633, Email peter@wilson.com, Birth date 2/8/80.", "old": {"ok": true, "shots": [{"src": "img/old/AB03/step02.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB03/step02.jpg", "cap": "", "landing": false}]}}, {"n": 3, "html": "Select Peter Wilson again (the row that is already selected): the row is no longer highlighted and the form closes.", "old": {"ok": true, "shots": [{"src": "img/old/AB03/step03.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB03/step03.jpg", "cap": "", "landing": false}]}}], "extras": {}, "result": "PASS", "newResult": "PASS", "acceptedSteps": [], "at": null, "newAt": null, "file": null}, {"id": "AB04", "title": "Add a new contact", "role": "Anonymous user, no login", "meta": [["Role / test user", "Anonymous user, no login (the app has none)"], ["Preconditions", "App freshly started (the 100 demo contacts only). Browser language English (United States)."], ["Known pre-existing behaviour", "All users share one contact list until the app restarts. A contact cannot be deleted on the screen"]], "sections": [{"name": "Checks on the saved data", "html": "<ul><li>The new contact is stored with all five values: first name, last name, phone, email and birth date 15 March 1980 (step 4), and is still there after a page reload, so it is kept by the app and not only in the page (step 5).<\/li><li>The demo contacts are unchanged: George White is the second row after the save.<\/li><\/ul>"}], "textSteps": [], "steps": [{"n": 1, "html": "Choose \"New contact\": an empty contact form opens with First name, Last name, Phone, Email and Birth date, all blank, and the cursor in First name.", "old": {"ok": true, "shots": [{"src": "img/old/AB04/step01.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB04/step01.jpg", "cap": "", "landing": false}]}}, {"n": 2, "html": "Enter First name Maria, Last name Virtanen, Phone + 358 555 123, Email maria@virtanen.fi, and type the birth date 3/15/1980: after leaving the birth date field it shows 3/15/80.", "old": {"ok": true, "shots": [{"src": "img/old/AB04/step02.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB04/step02.jpg", "cap": "", "landing": false}]}}, {"n": 3, "html": "Save: a short notification says \"Saved 'Maria Virtanen'.\", the form closes, and Maria Virtanen is at the top of the list with maria@virtanen.fi.", "old": {"ok": true, "shots": [{"src": "img/old/AB04/step03.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB04/step03.jpg", "cap": "", "landing": false}]}}, {"n": 4, "html": "Select Maria Virtanen: the form shows exactly the values entered, Birth date 3/15/80.", "old": {"ok": true, "shots": [{"src": "img/old/AB04/step04.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB04/step04.jpg", "cap": "", "landing": false}]}}, {"n": 5, "html": "Reload the page and type \"virtanen\" in the filter field: Maria Virtanen is the only contact listed.", "old": {"ok": true, "shots": [{"src": "img/old/AB04/step05.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB04/step05.jpg", "cap": "", "landing": false}]}}], "extras": {}, "result": "PASS", "newResult": "PASS", "acceptedSteps": [], "at": null, "newAt": null, "file": null}, {"id": "AB05", "title": "Edit a contact", "role": "Anonymous user, no login", "meta": [["Role / test user", "Anonymous user, no login (the app has none)"], ["Preconditions", "App freshly started (the 100 demo contacts only). Browser language English (United States)."], ["Known pre-existing behaviour", "All users share one contact list until the app restarts"]], "sections": [{"name": "Checks on the saved data", "html": "<ul><li>Timothy Jones is stored as Timothy Jonesson with phone + 358 555 111; email and birth date are unchanged. No new contact was created: the list still starts George White, Daniel Thompson, Timothy Jonesson.<\/li><\/ul>"}], "textSteps": [], "steps": [{"n": 1, "html": "Select Timothy Jones in the list: the form shows his details, Phone + 358 555 181, Email timothy@jones.com and Birth date 1/13/30.", "old": {"ok": true, "shots": [{"src": "img/old/AB05/step01.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB05/step01.jpg", "cap": "", "landing": false}]}}, {"n": 2, "html": "Change Last name to Jonesson and Phone to + 358 555 999, then Save: a notification says \"Saved 'Timothy Jonesson'.\", the form closes, and the list shows Timothy Jonesson in the same place (third row), with the email unchanged.", "old": {"ok": true, "shots": [{"src": "img/old/AB05/step02.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB05/step02.jpg", "cap": "", "landing": false}]}}, {"n": 3, "html": "Select Timothy Jonesson: the form shows Last name Jonesson and Phone + 358 555 999; the other fields are unchanged.", "old": {"ok": true, "shots": [{"src": "img/old/AB05/step03.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB05/step03.jpg", "cap": "", "landing": false}]}}, {"n": 4, "html": "Change Phone to + 358 555 111 and press Enter while still in the Phone field: the contact is saved the same way as with the Save button (notification \"Saved 'Timothy Jonesson'.\", form closes).", "old": {"ok": true, "shots": [{"src": "img/old/AB05/step04.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB05/step04.jpg", "cap": "", "landing": false}]}}, {"n": 5, "html": "Reload the page and select Timothy Jonesson: Phone + 358 555 111 is shown.", "old": {"ok": true, "shots": [{"src": "img/old/AB05/step05.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB05/step05.jpg", "cap": "", "landing": false}]}}], "extras": {}, "result": "PASS", "newResult": "PASS", "acceptedSteps": [], "at": null, "newAt": null, "file": null}, {"id": "AB06", "title": "Cancel or abandon changes", "role": "Anonymous user, no login", "meta": [["Role / test user", "Anonymous user, no login (the app has none)"], ["Preconditions", "App freshly started (the 100 demo contacts only). Browser language English (United States)."], ["Known pre-existing behaviour", "Cancel on a new contact while no contact is selected shows \"Cancelled\" but leaves the form open with the typed values"]], "sections": [{"name": "Checks on the saved data", "html": "<ul><li>No contact changed and none was added: the list still starts George White, Daniel Thompson, Timothy Jones.<\/li><\/ul>"}], "textSteps": [], "steps": [{"n": 1, "html": "Select Timothy Jones, change First name to Changed, then Cancel: a notification says \"Cancelled\", the form closes, and the list still shows Timothy Jones.", "old": {"ok": true, "shots": [{"src": "img/old/AB06/step01.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB06/step01.jpg", "cap": "", "landing": false}]}}, {"n": 2, "html": "Select Timothy Jones again: the form shows First name Timothy; the change was not kept.", "old": {"ok": true, "shots": [{"src": "img/old/AB06/step02.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB06/step02.jpg", "cap": "", "landing": false}]}}, {"n": 3, "html": "Change First name to Unsaved, then select Peter Wilson in the list without saving: the form shows Peter Wilson.", "old": {"ok": true, "shots": [{"src": "img/old/AB06/step03.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB06/step03.jpg", "cap": "", "landing": false}]}}, {"n": 4, "html": "Select Timothy Jones again: First name is still Timothy; the unsaved change was dropped.", "old": {"ok": true, "shots": [{"src": "img/old/AB06/step04.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB06/step04.jpg", "cap": "", "landing": false}]}}, {"n": 5, "html": "Select Timothy Jones once more to close the form, so no contact is selected. Choose \"New contact\", type Temp in First name, then Cancel: a notification says \"Cancelled\", but the form stays open and still shows Temp (known pre-existing behaviour). The list has no new contact.", "old": {"ok": true, "shots": [{"src": "img/old/AB06/step05.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB06/step05.jpg", "cap": "", "landing": false}]}}], "extras": {}, "result": "PASS", "newResult": "PASS", "acceptedSteps": [], "at": null, "newAt": null, "file": null}, {"id": "AB08", "title": "Try to save an invalid birth date", "role": "Anonymous user, no login", "meta": [["Role / test user", "Anonymous user, no login (the app has none)"], ["Preconditions", "App freshly started (the 100 demo contacts only). Browser language English (United States)."], ["Known pre-existing behaviour", "A failed save does nothing and shows no message"]], "sections": [{"name": "Checks on the saved data", "html": "<ul><li>Only one contact was added (Bad Date, birth date 24 December 1985): the second row is George White.<\/li><\/ul>"}], "textSteps": [], "steps": [{"n": 1, "html": "Choose \"New contact\", enter First name Bad and Last name Date, type \"notadate\" as the birth date and leave the field: the birth date field is flagged as invalid.", "old": {"ok": true, "shots": [{"src": "img/old/AB08/step01.jpg", "cap": "The field is flagged with a red border and a \"!\" marker; the message shows only when hovering", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB08/step01.jpg", "cap": "\"Date format not recognized\" is written under the field as soon as you leave it. Pending the customer's answer", "landing": false}]}}, {"n": 2, "html": "Save: nothing happens. No notification, the form stays open with the values as typed, and no contact is added to the list.", "old": {"ok": true, "shots": [{"src": "img/old/AB08/step02.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB08/step02.jpg", "cap": "", "landing": false}]}}, {"n": 3, "html": "Change the birth date to 12/24/1985 and leave the field: the flag goes away and the field shows 12/24/85.", "old": {"ok": true, "shots": [{"src": "img/old/AB08/step03.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB08/step03.jpg", "cap": "", "landing": false}]}}, {"n": 4, "html": "Save: a notification says \"Saved 'Bad Date'.\", the form closes, and Bad Date is at the top of the list with an empty email.", "old": {"ok": true, "shots": [{"src": "img/old/AB08/step04.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB08/step04.jpg", "cap": "", "landing": false}]}}, {"n": 5, "html": "Select Bad Date: Birth date 12/24/85, Phone and Email empty.", "old": {"ok": true, "shots": [{"src": "img/old/AB08/step05.jpg", "cap": "End of the step", "landing": false}, {"src": "img/old/AB08/step05b.jpg", "cap": "The calendar opens on December 1985 with the 24th marked", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB08/step05.jpg", "cap": "End of the step", "landing": false}, {"src": "img/new/AB08/step05b.jpg", "cap": "Same date marked; the calendar has a new layout (scrolling months, a year column, Today and Cancel). Pending the customer's answer", "landing": false}]}}], "extras": {}, "result": "PASS", "newResult": "PASS", "acceptedSteps": [], "at": null, "newAt": null, "file": null}, {"id": "AB09", "title": "Save a contact with missing or malformed values", "role": "Anonymous user, no login", "meta": [["Role / test user", "Anonymous user, no login (the app has none)"], ["Preconditions", "App freshly started (the 100 demo contacts only). Browser language English (United States)."], ["Known pre-existing behaviour", "No field is required and the email is not checked, so a blank contact can be saved. A contact cannot be deleted on the screen"]], "sections": [{"name": "Checks on the saved data", "html": "<ul><li>Both contacts are stored as entered: one with every field empty, one with the email text \"not an email\". The list now starts No Email, the blank contact, George White.<\/li><\/ul>"}], "textSteps": [], "steps": [{"n": 1, "html": "Choose \"New contact\" and Save without entering anything: a notification says \"Saved ' '.\", the form closes, and a row with empty names and email is at the top of the list.", "old": {"ok": true, "shots": [{"src": "img/old/AB09/step01.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB09/step01.jpg", "cap": "", "landing": false}]}}, {"n": 2, "html": "Choose \"New contact\", enter First name No, Last name Email and Email \"not an email\", then Save: a notification says \"Saved 'No Email'.\" and No Email is at the top of the list with \"not an email\" as its email.", "old": {"ok": true, "shots": [{"src": "img/old/AB09/step02.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB09/step02.jpg", "cap": "", "landing": false}]}}, {"n": 3, "html": "Select the blank row (now second): the form opens with all fields empty.", "old": {"ok": true, "shots": [{"src": "img/old/AB09/step03.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB09/step03.jpg", "cap": "", "landing": false}]}}], "extras": {}, "result": "PASS", "newResult": "PASS", "acceptedSteps": [], "at": null, "newAt": null, "file": null}, {"id": "AB10", "title": "See another user's changes", "role": "Anonymous user, no login, in two separate browser sessions on the same app instance", "meta": [["Role / test user", "Anonymous user, no login, in two separate browser sessions (user A and user B) on the same app instance"], ["Preconditions", "App freshly started (the 100 demo contacts only). Browser language English (United States). Both sessions opened before step 1."], ["Known pre-existing behaviour", "All users share one contact list until the app restarts. A session's list is not updated when someone else saves; it updates on that session's own next save, filter change or page reload"]], "sections": [{"name": "Checks on the saved data", "html": "<ul><li>Both sessions see the same stored contacts once their list is refreshed: Shared Person added, Daniel Thompson renamed Thompsonne.<\/li><\/ul>"}], "textSteps": [], "steps": [{"n": 1, "html": "User A and user B both open the app: both lists start George White, Daniel Thompson, Timothy Jones.", "old": {"ok": true, "shots": [{"src": "img/old/AB10/step01.jpg", "cap": "User A", "landing": false}, {"src": "img/old/AB10/step01b.jpg", "cap": "User B", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB10/step01.jpg", "cap": "User A", "landing": false}, {"src": "img/new/AB10/step01b.jpg", "cap": "User B", "landing": false}]}}, {"n": 2, "html": "User A changes Daniel Thompson's last name to Thompsonne and saves, then adds a new contact First name Shared, Last name Person: user A's list starts Shared Person, George White, Daniel Thompsonne.", "old": {"ok": true, "shots": [{"src": "img/old/AB10/step02.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB10/step02.jpg", "cap": "", "landing": false}]}}, {"n": 3, "html": "User B, without reloading, looks at the list: it still starts George White, Daniel Thompson, Timothy Jones, with no Shared Person.", "old": {"ok": true, "shots": [{"src": "img/old/AB10/step03a.jpg", "cap": "User A", "landing": false}, {"src": "img/old/AB10/step03.jpg", "cap": "User B", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB10/step03a.jpg", "cap": "User A", "landing": false}, {"src": "img/new/AB10/step03.jpg", "cap": "User B", "landing": false}]}}, {"n": 4, "html": "User B types \"shared\" in the filter field: Shared Person is listed.", "old": {"ok": true, "shots": [{"src": "img/old/AB10/step04.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB10/step04.jpg", "cap": "", "landing": false}]}}, {"n": 5, "html": "User B clears the filter: the list starts Shared Person, George White, Daniel Thompsonne.", "old": {"ok": true, "shots": [{"src": "img/old/AB10/step05.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB10/step05.jpg", "cap": "", "landing": false}]}}, {"n": 6, "html": "User B reloads the page: the list is the same as user A's.", "old": {"ok": true, "shots": [{"src": "img/old/AB10/step06a.jpg", "cap": "User A", "landing": false}, {"src": "img/old/AB10/step06.jpg", "cap": "User B", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB10/step06a.jpg", "cap": "User A. Same list as user B", "landing": false}, {"src": "img/new/AB10/step06.jpg", "cap": "User B. Both lists are one row longer with the Lumo look (accepted with the choice of look) and the same as each other", "landing": false}]}}], "extras": {}, "result": "PASS", "newResult": "PASS", "acceptedSteps": [], "at": null, "newAt": null, "file": null}, {"id": "AB11", "title": "Two users edit the same contact", "role": "Anonymous user, no login, in two separate browser sessions on the same app instance", "meta": [["Role / test user", "Anonymous user, no login, in two separate browser sessions (user A and user B) on the same app instance"], ["Preconditions", "App freshly started (the 100 demo contacts only). Browser language English (United States). Both sessions opened before step 1."], ["Known pre-existing behaviour", "All users share one contact list until the app restarts. The last save wins: a session saving a contact it opened before another user's save silently overwrites that save, with no warning"]], "sections": [{"name": "Checks on the saved data", "html": "<ul><li>Daniel Thompson is stored with last name Thompson and phone + 358 555 000: user B's whole contact replaced user A's.<\/li><\/ul>"}], "textSteps": [], "steps": [{"n": 1, "html": "User A selects Daniel Thompson, changes Last name to Thompsonne and saves: user A's list shows Daniel Thompsonne.", "old": {"ok": true, "shots": [{"src": "img/old/AB11/step01.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB11/step01.jpg", "cap": "", "landing": false}]}}, {"n": 2, "html": "User B, without reloading, selects Daniel Thompson: the form shows the old details, Last name Thompson, Phone + 358 555 265.", "old": {"ok": true, "shots": [{"src": "img/old/AB11/step02.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB11/step02.jpg", "cap": "", "landing": false}]}}, {"n": 3, "html": "User B changes Phone to + 358 555 000 and saves: a notification says \"Saved 'Daniel Thompson'.\" and user B's list shows Daniel Thompson.", "old": {"ok": true, "shots": [{"src": "img/old/AB11/step03.jpg", "cap": "", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB11/step03.jpg", "cap": "", "landing": false}]}}, {"n": 4, "html": "User A reloads the page and selects Daniel Thompson: Last name is Thompson again and Phone is + 358 555 000. User A's change is lost, with no warning to either user.", "old": {"ok": true, "shots": [{"src": "img/old/AB11/step04.jpg", "cap": "User A", "landing": false}, {"src": "img/old/AB11/step04b.jpg", "cap": "User B: the \"Saved\" message stays until the mouse moves", "landing": false}]}, "new": {"ok": true, "shots": [{"src": "img/new/AB11/step04.jpg", "cap": "User A", "landing": false}, {"src": "img/new/AB11/step04b.jpg", "cap": "User B: the \"Saved\" message has already closed by itself after 3 seconds. Pending the customer's answer", "landing": false}]}}], "extras": {}, "result": "PASS", "newResult": "PASS", "acceptedSteps": [], "at": null, "newAt": null, "file": null}], "oldLabel": "Original (Vaadin 8.14.5)", "newLabel": "Migrated (Vaadin 25)", "oldRef": "", "newRef": "", "oldRun": "", "newRun": "", "heading": "Addressbook: the original app (Vaadin 8) and the migrated app (Vaadin 25), workflow by workflow", "date": "22 October 2026 (draft: three differences and one workflow are pending the customer's answer)", "overview": "<p>This walkthrough shows how the Addressbook app behaves before and after the migration. Each workflow is a short task a user does in the app. For every step you see what the user does and expects, and a screenshot of the original app next to one of the migrated app after the same step.<\/p><p><strong>How both apps were run.<\/strong> Both apps were recorded on 22 October 2026 with the same browser (Chromium), the same 1400 x 900 window, browser language US English and the UTC time zone. Each workflow started on a freshly started app with the same 100 demo contacts. The original app is the Vaadin 8.14.5 version that the migration used as its reference; the migrated app is the Vaadin 25 version with the Lumo look, both in production mode. The app has no login, so there are no test users; the two workflows with two users use two separate browser sessions on the same app.<\/p><p><strong>How dates are written.<\/strong> As in the app: month/day/year with a two-digit year, so 6/11/59 is 11 June 1959. \"Today\" is the day of the recording, 22 October 2026.<\/p><p><strong>What looks different everywhere.<\/strong> Vaadin 8's Valo look does not exist in Vaadin 25. The migrated app uses Vaadin's Lumo look, chosen by the customer: grey-filled fields, no column lines in the list, a pale highlight for the selected row and a different font. Rows are a little shorter, so about one more contact is visible at once. The layout, the fields, the buttons and the data are the same.<\/p><p><strong>Status of this draft.<\/strong><\/p><ul><li>10 of the 11 workflows are shown. All 10 give the same results on both apps.<\/li><li>Not shown yet: \"Enter a birth date with the calendar and by typing\". In one of its steps the calendar for a new contact opens on the month last shown (for example June 1959) instead of the current month. Whether to accept this or to take a prepared fix is pending the customer's answer. The workflow will be recorded again and added here once that is answered.<\/li><li>Three differences shown below are pending the customer's answer, and are marked so under the screenshot: the \"Saved\" message closes by itself after 3 seconds (\"Two users edit the same contact\", step 4); \"Date format not recognized\" is written under the birth date field (\"Try to save an invalid birth date\", step 1); and the birth date calendar has a new layout (same workflow, step 5).<\/li><\/ul>"}</script>
+<script>
+(function () {
+  var D = JSON.parse(document.getElementById('data').textContent), W = D.workflows, M = D.mode;
+  var EXP = M === 'export', CMP = M !== 'baseline', HOME = EXP ? -1 : 0, cur = HOME, lastFocus = null;
+  var OL = D.oldLabel, NL = D.newLabel;
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function chip(r) { var k = String(r || 'not run').toLowerCase(); var c = k === 'pass' ? 'pass' : k === 'accepted' ? 'accepted' : k === 'not run' ? '' : 'fail'; return '<span class="chip ' + c + '">' + esc(k) + '</span>'; }
+  function outcome(w) { return w.acceptedSteps.length ? '<span class="chip accepted">accepted change at step ' + w.acceptedSteps.join(', ') + '</span>' : '<span class="chip pass">same outcome</span>'; }
+  document.body.className = 'm-' + M;
+  document.title = D.title || 'Workflow walkthrough';
+
+  var nSteps = W.reduce(function (a, w) { return a + w.steps.length; }, 0);
+  function score(k) { return W.filter(function (w) { return w[k] === 'PASS'; }).length; }
+  if (EXP) $('top').innerHTML = '<b>' + esc(D.heading || D.title) + '</b><span>' + W.length + ' workflows, ' + nSteps + ' steps. ' + esc(OL) + ' and ' + esc(NL) + (D.date ? ', both recorded on ' + esc(D.date) : '') + '.</span>';
+  else $('top').innerHTML = '<b>' + esc(OL) + ': run ' + esc(D.oldRun) + '</b><span>' + esc(D.oldRef) + '</span><span class="score">' + score('result') + '/' + W.length + ' pass</span>' +
+    (CMP ? '<b>' + esc(NL) + ': run ' + esc(D.newRun) + '</b><span>' + esc(D.newRef) + '</span><span class="score">' + score('newResult') + ' pass + ' +
+      W.filter(function (w) { return w.newResult === 'ACCEPTED'; }).length + ' accepted / ' + W.length + '</span>' : '') +
+    '<span>Dates and data follow each run\'s reset day; compare outcomes.</span>';
+
+  var items = (EXP ? [{ i: -1, id: '', title: 'Overview', r: '' }] : []).concat(W.map(function (w, i) {
+    return { i: i, id: w.id, title: w.title, r: esc(w.role) + ' ' + (EXP ? (w.acceptedSteps.length ? '<span class="chip accepted">accepted change</span>' : '') : chip(w.result) + (CMP ? chip(w.newResult) : '')) };
+  }));
+  $('list').innerHTML = items.map(function (x) { return '<li><button type="button" data-i="' + x.i + '"><span class="id">' + esc(x.id) + '</span><span class="t">' + esc(x.title) + '</span><span class="r">' + x.r + '</span></button></li>'; }).join('');
+  $('sel').innerHTML = items.map(function (x) { return '<option value="' + x.i + '">' + esc((x.id ? x.id + ' ' : '') + x.title) + '</option>'; }).join('');
+
+  // Keyword search: the exact phrase first, else all words, over the workflow's whole text.
+  var TXT = W.map(function (w) {
+    var p = [w.id, w.title, w.role];
+    w.meta.forEach(function (m) { p.push(m[1]); });
+    w.textSteps.forEach(function (t) { p.push(t.html); });
+    w.sections.forEach(function (s) { p.push(s.html); });
+    w.steps.forEach(function (s) { p.push(s.html, s.old && s.old.desc); });
+    return p.join(' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').toLowerCase();
+  });
+  function filter(q) {
+    var phrase = String(q || '').toLowerCase().replace(/\s+/g, ' ').trim(), words = phrase.split(' ').filter(Boolean);
+    var hit = function (i) { return TXT[i].indexOf(phrase) >= 0; }, mode = '';
+    if (phrase && !W.some(function (w, i) { return hit(i); })) { hit = function (i) { return words.every(function (x) { return TXT[i].indexOf(x) >= 0; }); }; mode = ' (all words)'; }
+    var n = 0;
+    items.forEach(function (x, k) {
+      var ok = !phrase || x.i < 0 || hit(x.i); if (ok && x.i >= 0) n++;
+      document.querySelectorAll('#list li')[k].hidden = !ok;
+      var o = document.querySelectorAll('#sel option')[k]; o.hidden = !ok; o.disabled = !ok;
+    });
+    $('qcnt').textContent = phrase ? n + ' of ' + W.length + ' match' + mode : '';
+  }
+  function onQ(v) { $('q').value = v; $('qm').value = v; filter(v); }
+
+  function shotHtml(s, alt) {
+    var cap = s.cap || '';
+    return '<figure><button type="button" class="shot" data-src="' + esc(s.src) + '" data-cap="' + esc(alt + (cap ? ': ' + cap : '')) + '" aria-label="Enlarge ' + esc(alt) + '">' +
+      '<img loading="lazy" src="' + esc(s.src) + '" alt="' + esc(alt + (cap ? ': ' + cap : '')) + '"></button>' + (cap ? '<figcaption>' + esc(cap) + '</figcaption>' : '') + '</figure>';
+  }
+  function shots(r, alt) { return r.shots.length ? r.shots.map(function (s) { return shotHtml(s, alt); }).join('') : '<div class="missing">No screenshot for this step.</div>'; }
+  function obsHtml(obs) {
+    return obs.length ? '<dl class="obs">' + obs.map(function (kv) {
+      var v = kv[1]; return '<dt>' + esc(kv[0]) + '</dt><dd>' + (v.length > 180 ? '<details><summary>' + esc(v.slice(0, 120)) + ' ...</summary>' + esc(v) + '</details>' : esc(v)) + '</dd>';
+    }).join('') + '</dl>' : '';
+  }
+  function recHtml(r, lbl) {
+    var h = '<div class="rec"><div class="line"><span class="lbl">' + lbl + '</span>' + chip(r.ok ? 'PASS' : r.accepted.length ? 'ACCEPTED' : 'FAIL') + '<span class="desc">' + esc(r.desc) + '</span></div>' + obsHtml(r.obs);
+    if (r.err) h += '<div class="box err"><span class="lbl">Step error</span><pre>' + esc(r.err) + '</pre></div>';
+    if (r.errors.length) h += '<div class="box err"><span class="lbl">Browser errors (' + r.errors.length + ')</span><pre>' + r.errors.map(esc).join('\n') + '</pre></div>';
+    if (r.serverLog.length) h += '<div class="box"><span class="lbl">Server log (' + r.serverLog.length + ')</span><pre>' + r.serverLog.map(esc).join('\n') + '</pre></div>';
+    return h + '</div>';
+  }
+  function acceptedHtml(r) {
+    return r.accepted.map(function (x) { return '<p class="note"><b>Accepted difference.</b> ' + esc(x.landed) + '. ' + esc(x.reason) + (x.continuedBy ? '. Continued: ' + esc(x.continuedBy) : '') + '</p>'; }).join('');
+  }
+  function stepHtml(w, s) {
+    var head = '<span class="num">STEP ' + esc(s.n) + '</span>' + (s.html ? '<p class="steptext">' + s.html + '</p>' : '');
+    var oldAlt = w.id + ' step ' + s.n + ' ' + OL, newAlt = w.id + ' step ' + s.n + ' ' + NL;
+    if (EXP) {
+      if (s.textOnly) return '<article class="step"><div class="col">' + head + '<p class="missing">' + esc(s.textOnly) + '</p></div></article>';
+      var acc = s.explain && s.explain.length;
+      return '<article class="step"><div class="col">' + head + '</div><div class="pair">' +
+        '<div class="col"><div class="side">' + esc(OL) + '</div>' + shots(s.old, oldAlt) + '</div>' +
+        '<div class="col"><div class="side">' + esc(NL) + ' ' + (acc ? '<span class="chip accepted">accepted change</span>' : '<span class="chip pass">same outcome</span>') + '</div>' +
+        shots(s['new'], newAlt) + (acc ? s.explain.map(function (e) { return '<p class="note">' + esc(e) + '</p>'; }).join('') : '') + '</div></div></article>';
+    }
+    var txt = '<div class="col">' + head + recHtml(s.old, CMP ? 'Old check' : 'Recorded') + (CMP && s['new'] ? recHtml(s['new'], 'New check') : '') + '</div>';
+    var oldCol = '<div class="col"><div class="side">' + esc(OL) + '</div>' + shots(s.old, oldAlt) + '</div>', newCol = '';
+    if (CMP) {
+      var n = s['new'];
+      newCol = '<div class="col"><div class="side">' + esc(NL) + ' ' + (n ? chip(n.ok ? 'PASS' : n.accepted.length ? 'ACCEPTED' : 'FAIL') : '') + '</div>' +
+        (n ? shots(n, newAlt) + acceptedHtml(n) : '<div class="missing">Not reached: the new run stopped before this step.</div>') + '</div>';
+    }
+    return '<article class="step">' + txt + oldCol + newCol + '</article>';
+  }
+  function overviewHtml() {
+    return '<div class="prose"><h1>' + esc(D.title) + '</h1>' + (D.overview || '') + '</div><h2>Workflows</h2><div class="tablewrap"><table class="wftable"><thead><tr><th>Id</th><th>Workflow</th><th>Role</th><th>Steps</th><th>' + esc(NL) + '</th></tr></thead><tbody>' +
+      W.map(function (w) { return '<tr><td>' + esc(w.id) + '</td><td><a href="#' + esc(w.id) + '">' + esc(w.title) + '</a></td><td>' + esc(w.role) + '</td><td>' + w.steps.length + '</td><td>' + outcome(w) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  }
+  function render(i, focus) {
+    cur = i;
+    Array.prototype.forEach.call(document.querySelectorAll('#list button'), function (b) { b.setAttribute('aria-current', String(+b.dataset.i === i)); });
+    $('sel').value = String(i);
+    $('pprev').disabled = i <= HOME; $('pnext').disabled = i >= W.length - 1;
+    if (i < 0) { $('main').innerHTML = overviewHtml(); return; }
+    var w = W[i], h = '<div class="head"><div class="eyebrow"><span>' + esc(w.id) + '</span>' +
+      (EXP ? outcome(w) : '<span>' + esc(OL) + '</span>' + chip(w.result) + (CMP ? '<span>' + esc(NL) + '</span>' + chip(w.newResult) : '') + '<span>' + esc((w.at || '').replace('T', ' ').replace(/\.\d+Z$/, ' UTC')) + '</span>') +
+      '</div><h1>' + esc(w.title) + '</h1><dl class="meta">' + w.meta.map(function (m) { return '<dt>' + esc(m[0]) + '</dt><dd>' + m[1] + '</dd>'; }).join('') + '</dl>' +
+      '<div class="pager"><button type="button" id="prev"' + (i <= HOME ? ' disabled' : '') + '>Previous</button><button type="button" id="next"' + (i >= W.length - 1 ? ' disabled' : '') + '>Next</button><span class="keys">Left / right arrow keys switch workflow</span></div></div>';
+    if (w.textSteps.length) h += '<h2>Workflow steps (' + w.textSteps.length + ')</h2><p class="note">The workflow text has ' + w.textSteps.length + ' steps and the run recorded ' + w.steps.length +
+      '. They are shown separately, not matched one to one.</p><ol class="prose">' + w.textSteps.map(function (t) { return '<li value="' + t.n + '">' + t.html + '</li>'; }).join('') + '</ol><h2>Recorded steps (' + w.steps.length + ')</h2>';
+    else h += '<h2>Steps (' + w.steps.length + ')</h2>';
+    h += '<div class="steps">' + w.steps.map(function (s) { return stepHtml(w, s); }).join('') + '</div>';
+    ['old', 'new'].forEach(function (side) {
+      var x = (w.extras || {})[side];
+      if (x && x.length) h += '<h2>Other screenshots, ' + esc(side === 'old' ? OL : NL) + ' (' + x.length + ')</h2><div class="extras">' + x.map(function (e) { return shotHtml(e, w.id + ' ' + (side === 'old' ? OL : NL)); }).join('') + '</div>';
+    });
+    if (w.sections.length) h += '<h2>' + (EXP ? 'More about this workflow' : 'Rest of the workflow text') + '</h2><div class="prose">' + w.sections.map(function (s) { return '<h3>' + esc(s.name) + '</h3>' + s.html; }).join('') + '</div>';
+    if (w.file) h += '<p class="src">' + esc(w.file) + ' · ' + esc(D.oldRun) + '/' + esc(w.id) + (CMP ? ' · ' + esc(D.newRun) + '/' + esc(w.id) : '') + '</p>';
+    $('main').innerHTML = h;
+    $('prev').onclick = function () { go(cur - 1); };
+    $('next').onclick = function () { go(cur + 1); };
+    if (focus) { $('main').focus({ preventScroll: true }); window.scrollTo(0, 0); }
+  }
+  function go(i, fromHash) {
+    if (i < HOME || i >= W.length) return;
+    render(i, !fromHash);
+    var tok = i < 0 ? '' : W[i].id;
+    if (decodeURIComponent(location.hash.slice(1)) !== tok) { try { history.replaceState(null, '', tok ? '#' + tok : location.pathname); } catch (e) { location.hash = tok; } }
+  }
+  function fromHash() { var t = decodeURIComponent(location.hash.slice(1)); for (var i = 0; i < W.length; i++) if (W[i].id === t) return i; return HOME; }
+
+  $('list').addEventListener('click', function (e) { var b = e.target.closest('button[data-i]'); if (b) go(+b.dataset.i); });
+  $('sel').addEventListener('change', function () { go(+this.value); });
+  $('q').addEventListener('input', function () { onQ(this.value); });
+  $('qm').addEventListener('input', function () { onQ(this.value); });
+  $('pprev').onclick = function () { go(cur - 1); };
+  $('pnext').onclick = function () { go(cur + 1); };
+  var lb = $('lb');
+  function closeLb() { lb.hidden = true; $('lbimg').removeAttribute('src'); if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+  $('main').addEventListener('click', function (e) {
+    var b = e.target.closest('.shot');
+    if (b) { lastFocus = b; $('lbimg').src = b.dataset.src; $('lbimg').alt = b.dataset.cap; $('lbcap').textContent = b.dataset.cap; lb.hidden = false; $('lbclose').focus(); }
+  });
+  lb.addEventListener('click', closeLb);
+  document.addEventListener('keydown', function (e) {
+    if (!lb.hidden) { if (e.key === 'Escape' || e.key === 'Tab') { e.preventDefault(); closeLb(); } return; }
+    if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || /^(SELECT|INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+    if (e.key === 'ArrowLeft') { e.preventDefault(); go(cur - 1); } else if (e.key === 'ArrowRight') { e.preventDefault(); go(cur + 1); }
+  });
+  window.addEventListener('hashchange', function () { var i = fromHash(); if (i !== cur) go(i, true); });
+  render(fromHash(), false);
+})();
+</script>
+</body>
+</html>
