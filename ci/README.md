@@ -4,7 +4,7 @@
 
 ## What the job does
 
-One job on `ubuntu-latest`:
+One job on `ubuntu-24.04` (pinned, so the runner OS does not change underneath the migration):
 
 1. JDK 21 (Temurin), with the Maven repository cached.
 2. `mvn -B package`: compiles and builds `target/addressbook-2.0.war`. This is the build command; any commit can produce the deployable war this way. There are no tests yet, so surefire has nothing to run.
