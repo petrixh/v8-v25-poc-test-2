@@ -79,5 +79,5 @@ You should now have a Jetty server running on localhost:8080. Navigate to [http:
 
 To use the built in server adapters of Eclipse, instead of doing "Run As -> Maven Build..." you can do
 - Run As -> Run on Server
-- Select the server you want to run on, e.g. Apache Tomcat 8 and click ok
-- *Do not use the suggested J2EE Preview server* as it is outdated, deprecated and does not support Servlet 3, which is required for this application
+- Select the server you want to run on: a Jakarta EE 11 (Servlet 6.1) container, such as Jetty 12.1 (ee11, as used by `mvn jetty:run`), and click ok
+- *Do not use the suggested J2EE Preview server* as it is outdated, deprecated and does not support Servlet 6.1, which is required for this application
