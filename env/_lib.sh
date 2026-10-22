@@ -1,18 +1,18 @@
 # Shared by up.sh, reset.sh and down.sh. Sourced, not run.
 # Configuration (env vars, all optional):
 #   APP_ENV_PORT              host port of this copy            (default 8080)
-#   APP_ENV_PROJECT           name of this copy                 (default addressbook-old)
+#   APP_ENV_PROJECT           name of this copy                 (default addressbook-new)
 #   APP_ENV_CONTAINER         container name                    (default <project>-app)
 #   APP_ENV_PRODUCTION_MODE   true: Vaadin production mode; false: dev (debug) mode (default true)
 
 APP_ENV_PORT="${APP_ENV_PORT:-8080}"
-APP_ENV_PROJECT="${APP_ENV_PROJECT:-addressbook-old}"
+APP_ENV_PROJECT="${APP_ENV_PROJECT:-addressbook-new}"
 APP_ENV_CONTAINER="${APP_ENV_CONTAINER:-${APP_ENV_PROJECT}-app}"
 APP_ENV_PRODUCTION_MODE="${APP_ENV_PRODUCTION_MODE:-true}"
 
 ENV_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 REPO_DIR="$(dirname "$ENV_DIR")"
-IMAGE_NAME="addressbook-old"
+IMAGE_NAME="addressbook-new"
 # Every container this env starts carries these labels; scripts only touch containers that do.
 LABEL_APP="app-env.app"
 LABEL_PROJECT="app-env.project"
@@ -33,8 +33,9 @@ fi
 in_git() { [ "$(git -C "$REPO_DIR" rev-parse --show-toplevel 2>/dev/null)" = "$REPO_DIR" ]; }
 clean_git() { in_git && [ -z "$(git -C "$REPO_DIR" status --porcelain)" ]; }
 inputs_hash() {
-  # The build inputs: the Dockerfile, .dockerignore and what it lets into the context (pom.xml, src/).
-  (cd "$REPO_DIR" && find Dockerfile .dockerignore pom.xml src -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum) \
+  # The build inputs: the Dockerfile, .dockerignore and what it lets into the context (pom.xml, src/
+  # without the files the Vaadin build generates).
+  (cd "$REPO_DIR" && find Dockerfile .dockerignore pom.xml src -path src/main/frontend/generated -prune -o -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum) \
     | sha256sum | cut -c1-12
 }
 image_tag() {
