@@ -20,6 +20,15 @@ elif ! docker image inspect "$image" >/dev/null 2>&1; then
   die "image $image not found; run without --no-build first"
 fi
 
+# Dev mode: Vaadin's dev tools answer only the hosts in vaadin.devmode.hostsAllowed. Requests through
+# the published port reach the container from the bridge network's gateway, so allow exactly that address.
+dev_hosts=""
+if [ "$APP_ENV_PRODUCTION_MODE" = false ]; then
+  dev_hosts="$(docker network inspect bridge --format '{{(index .IPAM.Config 0).Gateway}}' 2>/dev/null || true)"
+  [[ "$dev_hosts" =~ ^[0-9.]+$ ]] || die "cannot read the Docker bridge gateway address (got '$dev_hosts'); needed for dev mode"
+fi
+
+# Only after the dev-mode check above: if it fails, an existing copy is left running.
 state="$(container_state)"
 case "$state" in
   ours) log "replacing the existing copy"; docker rm -f "$APP_ENV_CONTAINER" >/dev/null ;;
@@ -30,6 +39,6 @@ log "starting $image on port $APP_ENV_PORT (production mode: $APP_ENV_PRODUCTION
 docker run -d --name "$APP_ENV_CONTAINER" \
   --label "$LABEL_APP=$IMAGE_NAME" --label "$LABEL_PROJECT=$APP_ENV_PROJECT" \
   -p "127.0.0.1:${APP_ENV_PORT}:8080" \
-  -e "APP_PRODUCTION_MODE=$APP_ENV_PRODUCTION_MODE" \
+  -e "APP_PRODUCTION_MODE=$APP_ENV_PRODUCTION_MODE" -e "APP_DEV_HOSTS_ALLOWED=$dev_hosts" \
   "$image" >/dev/null
 wait_up

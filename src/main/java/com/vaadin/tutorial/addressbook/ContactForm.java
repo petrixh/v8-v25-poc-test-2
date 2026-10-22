@@ -1,23 +1,24 @@
 package com.vaadin.tutorial.addressbook;
 
-import com.vaadin.event.ShortcutAction;
+import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.converter.LocalDateToDateConverter;
 import com.vaadin.tutorial.addressbook.backend.Contact;
-import com.vaadin.ui.Button;
-import com.vaadin.ui.FormLayout;
-import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.Notification;
-import com.vaadin.ui.Notification.Type;
-import com.vaadin.ui.themes.ValoTheme;
-import com.vaadin.v7.data.fieldgroup.BeanFieldGroup;
-import com.vaadin.v7.data.fieldgroup.FieldGroup;
-import com.vaadin.v7.ui.DateField;
-import com.vaadin.v7.ui.TextField;
 
 /* Create custom UI Components.
  *
  * Create your own Vaadin components by inheritance and composition.
  * This is a form component inherited from VerticalLayout. Use
- * Use BeanFieldGroup to bind data fields from DTO to UI fields.
+ * Use Binder to bind data fields from DTO to UI fields.
  * Similarly named field by naming convention or customized
  * with @PropertyId annotation.
  */
@@ -29,12 +30,12 @@ public class ContactForm extends FormLayout {
     TextField lastName = new TextField("Last name");
     TextField phone = new TextField("Phone");
     TextField email = new TextField("Email");
-    DateField birthDate = new DateField("Birth date");
+    DatePicker birthDate = new DatePicker("Birth date");
 
     Contact contact;
 
     // Easily bind forms to beans and manage validation and buffering
-    BeanFieldGroup<Contact> formFieldBindings;
+    Binder<Contact> formFieldBindings = new Binder<>(Contact.class);
 
     public ContactForm() {
         configureComponents();
@@ -48,19 +49,25 @@ public class ContactForm extends FormLayout {
          * With Vaadin built-in styles you can highlight the primary save button
          * and give it a keyboard shortcut for a better UX.
          */
-        save.setStyleName(ValoTheme.BUTTON_PRIMARY);
-        save.setClickShortcut(ShortcutAction.KeyCode.ENTER);
+        save.addThemeVariants(ButtonVariant.PRIMARY);
+        save.addClickShortcut(Key.ENTER);
         setVisible(false);
+
+        // Bind the properties of the contact POJO to fields in this form.
+        // DatePicker holds a LocalDate; Contact keeps its java.util.Date.
+        formFieldBindings.forField(birthDate)
+                .withConverter(new LocalDateToDateConverter())
+                .bind("birthDate");
+        formFieldBindings.bindInstanceFields(this);
     }
 
     private void buildLayout() {
         setSizeUndefined();
-        setMargin(true);
 
         HorizontalLayout actions = new HorizontalLayout(save, cancel);
         actions.setSpacing(true);
 
-        addComponents(actions, firstName, lastName, phone, email, birthDate);
+        add(actions, firstName, lastName, phone, email, birthDate);
     }
 
     /*
@@ -74,43 +81,41 @@ public class ContactForm extends FormLayout {
      * classes and receive to various Vaadin component events, like button
      * clicks. Or keep it simple and compact with Lambda expressions.
      */
-    public void save(Button.ClickEvent event) {
+    public void save(ClickEvent<Button> event) {
         try {
             // Commit the fields from UI to DAO
-            formFieldBindings.commit();
+            formFieldBindings.writeBean(contact);
 
             // Save DAO to backend with direct synchronous service API
-            getUI().service.save(contact);
+            getAddressbook().service.save(contact);
 
             String msg = String.format("Saved '%s %s'.", contact.getFirstName(),
                     contact.getLastName());
-            Notification.show(msg, Type.TRAY_NOTIFICATION);
-            getUI().refreshContacts();
-        } catch (FieldGroup.CommitException e) {
+            Notification.show(msg, 3000, Notification.Position.BOTTOM_END);
+            getAddressbook().refreshContacts();
+        } catch (ValidationException e) {
             // Validation exceptions could be shown here
         }
     }
 
-    public void cancel(Button.ClickEvent event) {
+    public void cancel(ClickEvent<Button> event) {
         // Place to call business logic.
-        Notification.show("Cancelled", Type.TRAY_NOTIFICATION);
-        getUI().contactList.select(null);
+        Notification.show("Cancelled", 3000, Notification.Position.BOTTOM_END);
+        getAddressbook().contactList.select(null);
     }
 
     void edit(Contact contact) {
         this.contact = contact;
         if (contact != null) {
-            // Bind the properties of the contact POJO to fiels in this form
-            formFieldBindings = BeanFieldGroup.bindFieldsBuffered(contact,
-                    this);
+            // Read the properties of the contact POJO to fields in this form
+            formFieldBindings.readBean(contact);
             firstName.focus();
         }
         setVisible(contact != null);
     }
 
-    @Override
-    public AddressbookUI getUI() {
-        return (AddressbookUI) super.getUI();
+    AddressbookUI getAddressbook() {
+        return findAncestor(AddressbookUI.class);
     }
 
 }

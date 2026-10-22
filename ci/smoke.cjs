@@ -1,5 +1,5 @@
 // CI smoke check for the Addressbook app (see ci/README.md).
-// Opens the app, waits for the contact grid to have rows, fails on console errors, page errors
+// Opens the contact view by its route (""), waits for the contact grid to have rows, fails on console errors, page errors
 // or any HTTP response >= 400, and writes a screenshot.
 // Usage: node ci/smoke.cjs [baseUrl] [outDir]   (defaults: http://localhost:8080, target/smoke)
 // Exit 0 = pass, 1 = fail.
@@ -16,8 +16,8 @@ const TIMEOUT = 30000;
   const browser = await chromium.launch();
   const failures = [];
   try {
-    // Vaadin 7/8 pick client code from the user agent and do not recognise "HeadlessChrome"
-    // (they treat it as an old browser). Use the real Chrome UA so CI sees what users see.
+    // Use the real Chrome UA, not "HeadlessChrome", so CI sends what users' browsers send
+    // (the old Vaadin 8 app chose client code from it; kept so old and new runs match).
     const probe = await browser.newPage();
     const userAgent = (await probe.evaluate(() => navigator.userAgent)).replace('HeadlessChrome', 'Chrome');
     await probe.close();
@@ -30,10 +30,10 @@ const TIMEOUT = 30000;
     const response = await page.goto(base + '/', { timeout: TIMEOUT });
     if (!response) failures.push('no response for ' + base + '/');
     // The contact grid is filled with demo data on start: wait until it shows at least one row.
-    await page.waitForFunction(
-      () => document.querySelectorAll('.v-grid-body .v-grid-row').length > 0,
-      null, { timeout: TIMEOUT });
-    const rows = await page.locator('.v-grid-body .v-grid-row').count();
+    // Grid body rows live in the vaadin-grid shadow DOM; Playwright's CSS selectors pierce it.
+    const rowSelector = 'vaadin-grid #items tr[part~="body-row"]';
+    await page.locator(rowSelector).first().waitFor({ state: 'attached', timeout: TIMEOUT });
+    const rows = await page.locator(rowSelector).count();
     // Let late requests and client errors arrive before judging.
     await page.waitForTimeout(2000);
     const shot = path.join(out, 'smoke.png');

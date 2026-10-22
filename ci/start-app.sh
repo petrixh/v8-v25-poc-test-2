@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Start the app with `mvn jetty:run` in Vaadin production mode, in the background, and wait until / answers HTTP 200.
+# Start the app in Vaadin production mode with `mvn jetty:run-war`, in the background, and wait until / answers HTTP 200.
 # Usage: ci/start-app.sh [port]        (default port 8080)
 # Env:   MVN            Maven command (default: mvn)
+#        APP_PRODUCTION_MODE  true (default): `mvn jetty:run-war`, the production war;
+#                       false: `mvn jetty:run`, development (debug) mode
 #        APP_LOG        log file (default: target/jetty.log)
 #        START_TIMEOUT  seconds to wait for HTTP 200 (default: 180)
 # Writes the PID of the server JVM to target/jetty.pid. Stop it with ci/stop-app.sh.
@@ -14,12 +16,18 @@ TIMEOUT="${START_TIMEOUT:-180}"
 PIDFILE=target/jetty.pid
 mkdir -p target "$(dirname "$LOG")"
 
-# The app hard-codes productionMode = false in @VaadinServletConfiguration. Vaadin reads the
-# system property vaadin.productionMode before the servlet parameters, so this runs it in production mode.
-"$MVN" -B -Djetty.port="$PORT" -Dvaadin.productionMode=true jetty:run > "$LOG" 2>&1 &
+# Vaadin 25 decides production mode at build time. jetty:run-war builds and runs the war
+# (production frontend bundle, without the optional vaadin-dev dependency): production mode.
+# jetty:run runs the class directory with vaadin-dev on the classpath: development mode.
+case "${APP_PRODUCTION_MODE:-true}" in
+  true) GOAL=jetty:run-war ;;
+  false) GOAL=jetty:run ;;
+  *) echo "APP_PRODUCTION_MODE must be true or false" >&2; exit 2 ;;
+esac
+"$MVN" -B -Djetty.port="$PORT" "$GOAL" > "$LOG" 2>&1 &
 PID=$!
 echo "$PID" > "$PIDFILE"
-echo "Started mvn jetty:run on port $PORT (pid $PID, log $LOG)"
+echo "Started mvn $GOAL on port $PORT (pid $PID, log $LOG)"
 
 for ((i = 0; i < TIMEOUT; i += 2)); do
   if ! kill -0 "$PID" 2>/dev/null; then

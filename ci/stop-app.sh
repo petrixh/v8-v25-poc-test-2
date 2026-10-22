@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Stop the app started by ci/start-app.sh, by the PID in target/jetty.pid. Safe to run when it is not running.
-# Kills the PID only if it is still our server (a java process running jetty:run), so a stale PID file
+# Kills the PID only if it is still our server (a java process running jetty:run or jetty:run-war), so a stale PID file
 # never stops an unrelated process that reused the PID.
 set -uo pipefail
 cd "$(dirname "$0")/.."
