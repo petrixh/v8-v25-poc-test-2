@@ -1,0 +1,4 @@
+# Build context for the Dockerfile: only pom.xml and src/ are used.
+*
+!pom.xml
+!src/

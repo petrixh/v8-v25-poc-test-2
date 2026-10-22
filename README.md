@@ -16,6 +16,15 @@ $ mvn jetty:run
 
 Open [http://localhost:8080/](http://localhost:8080/)
 
+Reproducible environment
+-------------------
+With Docker, one command builds and starts a copy of the app in a known state (seed contacts, Vaadin production mode):
+```
+$ env/up.sh
+```
+
+Open [http://localhost:8080/](http://localhost:8080/). `env/reset.sh` returns it to the seed contacts and `env/down.sh` stops it. Ports, names and several copies side by side: see [env/README.md](env/README.md).
+
 
 Importing in IntelliJ IDEA 14
 --------------------
