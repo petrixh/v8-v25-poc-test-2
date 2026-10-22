@@ -158,7 +158,7 @@ These issues were in the old app before the migration. The migration kept them o
 
 # Old and new side by side
 
-The 11 user workflows recorded on the old app were run on the new app step by step and compared screenshot by screenshot. The walkthrough shipped next to this document shows each workflow with the old and new screenshots of every step and a note on each difference: [docs/walkthrough/index.html](walkthrough/index.html) (open it in a browser; it needs no server).
+The 11 user workflows recorded on the old app were run on the new app step by step and compared screenshot by screenshot. The walkthrough shipped next to this document shows each workflow with the old and new screenshots of every step and a note on each difference: [docs/walkthrough/index.html](walkthrough/index.html) (open it in a browser; it needs no server). It shows 10 of the 11 workflows; the birth-date calendar workflow is added after your answer on the calendar (item 1 under "Open decisions").
 
 ![The old app (Vaadin 8.14.5, Valo) with the same contact open, 1400 x 900 window. Compare with figure 1.](img/old-contact-open.png "The old app (Vaadin 8.14.5, Valo) with the same contact open, 1400 x 900 window. Compare with figure 1.")
 
@@ -201,7 +201,7 @@ Improvements that are not needed for the migration and were left out on purpose.
 
 ## Behaviour differences to accept or reject
 
-Each item is pending your answer. Where the migration team has recorded a recommendation, it is given.
+Each item is pending your answer. The migration team's recommendation is given for each.
 
 | # | Difference | Options | Recommendation |
 |---|---|---|---|
@@ -210,9 +210,9 @@ Each item is pending your answer. Where the migration team has recorded a recomm
 | 3 | The date order is always the US one (month/day/year), also for non-US English browsers | Accept, or ask for the browser's date order | Accept: the users are US English |
 | 4 | Clicking a field's label puts the cursor in the field | Accept, or ask to remove it | Accept: a small improvement |
 | 5 | The calendar popup has a new layout (scrolling months, year column, Today and Cancel) | Accept, or ask for a restyle | Accept: look only, same function |
-| 6 | "Saved" and "Cancelled" close by themselves after 3 s | Accept, or ask for a longer time or a close button | Pending your answer |
-| 7 | "Date format not recognized" shows under the field instead of as a tooltip | Accept, or ask for the old marker | Pending your answer |
-| 8 | With the calendar open, one Enter picks the day and saves | Accept, or ask for the old two-step Enter | Pending your answer |
+| 6 | "Saved" and "Cancelled" close by themselves after 3 s | Accept, or ask for a longer time or a close button | Accept: framework behaviour with no setting; the message and the save are the same |
+| 7 | "Date format not recognized" shows under the field instead of as a tooltip | Accept, or ask for the old marker | Accept: Vaadin 25 shows field errors under the field; same text, same outcome |
+| 8 | With the calendar open, one Enter picks the day and saves | Accept, or ask for the old two-step Enter | Accept: the same value is stored; one keystroke less |
 
 Until these are answered, the workflows "Enter a birth date", "Try to save an invalid birth date" and "Two users edit the same contact" are counted as not yet accepted.
 
