@@ -56,13 +56,17 @@ public class ContactForm extends FormLayout {
         setVisible(false);
 
         // Birth date as the Vaadin 8 DateField showed and read it in en-US:
-        // short year (6/11/59), typed two-digit years within 80 years before
-        // and 20 after today, four-digit years still accepted, and the same
-        // message for text that is not a date.
+        // short year (6/11/59), a typed two-digit year taken as the year
+        // nearest the reference year, decided by calendar year (in 2026:
+        // 46-99 -> 19xx, 00-45 -> 20xx), four-digit years still accepted, and
+        // the same message for text that is not a date.
         birthDate.setI18n(new DatePicker.DatePickerI18n()
                 .setDateFormats("M/d/yy", "M/d/yyyy")
                 .setReferenceDate(LocalDate.now().minusYears(30))
                 .setBadInputErrorMessage("Date format not recognized"));
+        // As the Vaadin 8 DateField: no calendar popup while typing, so Tab
+        // and the first Save click act at once; the button still opens it.
+        birthDate.setAutoOpen(false);
 
         // Bind the properties of the contact POJO to fields in this form.
         // DatePicker holds a LocalDate; Contact keeps its java.util.Date.
