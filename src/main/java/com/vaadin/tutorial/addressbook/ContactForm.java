@@ -14,6 +14,8 @@ import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.converter.LocalDateToDateConverter;
 import com.vaadin.tutorial.addressbook.backend.Contact;
 
+import java.time.LocalDate;
+
 /* Create custom UI Components.
  *
  * Create your own Vaadin components by inheritance and composition.
@@ -26,11 +28,11 @@ public class ContactForm extends FormLayout {
 
     Button save = new Button("Save", this::save);
     Button cancel = new Button("Cancel", this::cancel);
-    TextField firstName = new TextField("First name");
-    TextField lastName = new TextField("Last name");
-    TextField phone = new TextField("Phone");
-    TextField email = new TextField("Email");
-    DatePicker birthDate = new DatePicker("Birth date");
+    TextField firstName = new TextField();
+    TextField lastName = new TextField();
+    TextField phone = new TextField();
+    TextField email = new TextField();
+    DatePicker birthDate = new DatePicker();
 
     Contact contact;
 
@@ -53,6 +55,19 @@ public class ContactForm extends FormLayout {
         save.addClickShortcut(Key.ENTER);
         setVisible(false);
 
+        // Birth date as the Vaadin 8 DateField showed and read it in en-US:
+        // short year (6/11/59), a typed two-digit year taken as the year
+        // nearest the reference year, decided by calendar year (in 2026:
+        // 46-99 -> 19xx, 00-45 -> 20xx), four-digit years still accepted, and
+        // the same message for text that is not a date.
+        birthDate.setI18n(new DatePicker.DatePickerI18n()
+                .setDateFormats("M/d/yy", "M/d/yyyy")
+                .setReferenceDate(LocalDate.now().minusYears(30))
+                .setBadInputErrorMessage("Date format not recognized"));
+        // As the Vaadin 8 DateField: no calendar popup while typing, so Tab
+        // and the first Save click act at once; the button still opens it.
+        birthDate.setAutoOpen(false);
+
         // Bind the properties of the contact POJO to fields in this form.
         // DatePicker holds a LocalDate; Contact keeps its java.util.Date.
         formFieldBindings.forField(birthDate)
@@ -63,11 +78,25 @@ public class ContactForm extends FormLayout {
 
     private void buildLayout() {
         setSizeUndefined();
+        // As the Vaadin 8 FormLayout: one column at every width, labels beside
+        // the fields, and a 37 px margin (FormLayout has no padding setting)
+        setAutoResponsive(true);
+        setMaxColumns(1);
+        setLabelsAside(true);
+        setLabelWidth("5em");
+        getStyle().setPadding("37px");
 
         HorizontalLayout actions = new HorizontalLayout(save, cancel);
         actions.setSpacing(true);
 
-        add(actions, firstName, lastName, phone, email, birthDate);
+        // Labels beside the fields need form items; Save and Cancel sit above
+        // the field column, with no label
+        addFormItem(actions, "");
+        addFormItem(firstName, "First name");
+        addFormItem(lastName, "Last name");
+        addFormItem(phone, "Phone");
+        addFormItem(email, "Email");
+        addFormItem(birthDate, "Birth date");
     }
 
     /*

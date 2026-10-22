@@ -70,6 +70,8 @@ public class AddressbookUI extends HorizontalLayout {
         filter.addValueChangeListener(e -> refreshContacts(e.getValue()));
 
         contactList.setColumns("firstName", "lastName", "email");
+        // Columns as wide as their content, then the rest shared out, as the old grid sized them
+        contactList.getColumns().forEach(column -> column.setAutoWidth(true));
         contactList.setSelectionMode(Grid.SelectionMode.SINGLE);
         contactList.addSelectionListener(
                 e -> contactForm.edit(contactList.asSingleSelect().getValue()));
@@ -95,12 +97,16 @@ public class AddressbookUI extends HorizontalLayout {
 
         VerticalLayout left = new VerticalLayout(actions, contactList);
         left.setSizeFull();
+        // The Vaadin 8 layout margin (37 px, E002), through the layout's padding size property
+        left.getStyle().set("--vaadin-vertical-layout-padding", "37px");
         contactList.setSizeFull();
         left.setFlexGrow(1, contactList);
 
         // This view is the main layout
         setSizeFull();
         setFlexGrow(1, left);
+        // The form keeps its own width, as in the old app; the list takes the rest
+        setFlexShrink(0, contactForm);
 
         // Split and allow resizing
         add(left, contactForm);
@@ -116,10 +122,14 @@ public class AddressbookUI extends HorizontalLayout {
      */
     void refreshContacts() {
         refreshContacts(filter.getValue());
+        // After Save the old grid resized its columns to the new content (not on filter change)
+        contactList.recalculateColumnWidths();
     }
 
     private void refreshContacts(String stringFilter) {
         contactList.setItems(service.findAll(stringFilter));
+        // The old grid went back to the top when its data was replaced (after Save and on filter change)
+        contactList.scrollToStart();
         contactForm.setVisible(false);
     }
 
