@@ -1,1 +1,3 @@
 node_modules/
+# output of `npm run smoke` run from ci/
+target/

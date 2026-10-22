@@ -11,8 +11,11 @@ on:
 permissions:
   contents: read
 
+# On PR and work branches a newer push cancels the older run (one group per ref). On main, mig-dev
+# and stage/** each run gets its own group, so no run there is cancelled or dropped while pending:
+# every commit gets a result.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/mig-dev' || startsWith(github.ref, 'refs/heads/stage/')) && github.run_id || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -24,6 +27,8 @@ jobs:
       APP_PORT: 8080
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Set up JDK 21
         uses: actions/setup-java@v6
@@ -65,6 +70,10 @@ jobs:
 
       - name: Check production mode
         run: ci/check-production-mode.sh
+
+      # Production mode hides client errors from the browser console; server errors show up here.
+      - name: Check server log for errors
+        run: ci/check-server-log.sh
 
       - name: Stop app
         if: always()
