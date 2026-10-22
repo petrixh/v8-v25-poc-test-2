@@ -28,11 +28,11 @@ public class ContactForm extends FormLayout {
 
     Button save = new Button("Save", this::save);
     Button cancel = new Button("Cancel", this::cancel);
-    TextField firstName = new TextField("First name");
-    TextField lastName = new TextField("Last name");
-    TextField phone = new TextField("Phone");
-    TextField email = new TextField("Email");
-    DatePicker birthDate = new DatePicker("Birth date");
+    TextField firstName = new TextField();
+    TextField lastName = new TextField();
+    TextField phone = new TextField();
+    TextField email = new TextField();
+    DatePicker birthDate = new DatePicker();
 
     Contact contact;
 
@@ -74,11 +74,25 @@ public class ContactForm extends FormLayout {
 
     private void buildLayout() {
         setSizeUndefined();
+        // As the Vaadin 8 FormLayout: one column at every width, labels beside
+        // the fields, and a 37 px margin (FormLayout has no padding setting)
+        setAutoResponsive(true);
+        setMaxColumns(1);
+        setLabelsAside(true);
+        setLabelWidth("5em");
+        getStyle().setPadding("37px");
 
         HorizontalLayout actions = new HorizontalLayout(save, cancel);
         actions.setSpacing(true);
 
-        add(actions, firstName, lastName, phone, email, birthDate);
+        // Labels beside the fields need form items; Save and Cancel sit above
+        // the field column, with no label
+        addFormItem(actions, "");
+        addFormItem(firstName, "First name");
+        addFormItem(lastName, "Last name");
+        addFormItem(phone, "Phone");
+        addFormItem(email, "Email");
+        addFormItem(birthDate, "Birth date");
     }
 
     /*
