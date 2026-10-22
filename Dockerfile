@@ -36,10 +36,11 @@ RUN mvn package jetty:help -Ddetail=false
 # `mvn package` builds (production bundle, no vaadin-dev) runs in production mode, run
 # with jetty:run-war. APP_PRODUCTION_MODE=false runs `mvn jetty:run` instead: the class
 # directory with the optional vaadin-dev dependency, i.e. development (debug) mode.
+# Any other value is rejected at start (as ci/start-app.sh does).
 # Dev tools only answer the hosts in vaadin.devmode.hostsAllowed (default: localhost). Requests
-# reach the container from the Docker network, so dev mode allows any host here; up.sh
-# publishes the port on 127.0.0.1 only.
-ENV APP_PRODUCTION_MODE=true
+# through the published port arrive from the Docker network's gateway address, so up.sh passes
+# that address as APP_DEV_HOSTS_ALLOWED; other containers on the network are not allowed.
+ENV APP_PRODUCTION_MODE=true APP_DEV_HOSTS_ALLOWED=
 EXPOSE 8080
 ENTRYPOINT []
 # Last, so a new commit does not invalidate the dependency layers above.
@@ -54,4 +55,4 @@ LABEL org.opencontainers.image.title="addressbook-new" \
       org.opencontainers.image.source="" \
       org.opencontainers.image.url="" \
       org.opencontainers.image.ref.name=""
-CMD ["sh", "-c", "if [ \"$APP_PRODUCTION_MODE\" = false ]; then set -- jetty:run '-Dvaadin.devmode.hostsAllowed=*'; else set -- jetty:run-war; fi; exec mvn -o -Djetty.port=8080 \"$@\""]
+CMD ["sh", "-c", "case \"$APP_PRODUCTION_MODE\" in true) set -- jetty:run-war ;; false) set -- jetty:run ${APP_DEV_HOSTS_ALLOWED:+\"-Dvaadin.devmode.hostsAllowed=$APP_DEV_HOSTS_ALLOWED\"} ;; *) echo \"APP_PRODUCTION_MODE must be true or false, got '$APP_PRODUCTION_MODE'\" >&2; exit 2 ;; esac; exec mvn -o -Djetty.port=8080 \"$@\""]
