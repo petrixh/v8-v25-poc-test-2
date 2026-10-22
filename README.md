@@ -30,7 +30,7 @@ Running the tests
 $ mvn test
 ```
 
-JUnit 6 unit tests of the in-memory backend (`src/test/java`): `ContactService` stores and returns copies, and the 100 demo contacts match the original app's (`src/test/resources/.../demo-contacts.csv`). Maven runs them in UTC and en-US whatever the host's settings (surefire `argLine` in `pom.xml`). `mvn package` runs them too.
+JUnit 6 unit tests of the in-memory backend (`src/test/java`): `ContactService` stores and returns copies, and the 100 demo contacts match the original app's (`src/test/resources/.../demo-contacts.csv`). Maven runs them in UTC and en-US whatever the host's settings (surefire `argLine` in `pom.xml`). `mvn package` runs them too, and so does `mvn jetty:run-war`, which builds the war first: a failing test stops the app from starting. `mvn jetty:run` compiles the tests but does not run them.
 
 Reproducible environment
 -------------------
