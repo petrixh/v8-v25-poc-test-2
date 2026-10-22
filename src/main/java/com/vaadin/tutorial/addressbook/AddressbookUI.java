@@ -120,6 +120,8 @@ public class AddressbookUI extends HorizontalLayout {
 
     private void refreshContacts(String stringFilter) {
         contactList.setItems(service.findAll(stringFilter));
+        // The old grid went back to the top when its data was replaced (after Save and on filter change)
+        contactList.scrollToStart();
         contactForm.setVisible(false);
     }
 
