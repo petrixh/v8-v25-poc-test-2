@@ -90,6 +90,13 @@
                 <groupId>org.eclipse.jetty.ee11</groupId>
                 <artifactId>jetty-ee11-maven-plugin</artifactId>
                 <version>${jetty.version}</version>
+                <configuration>
+                    <systemProperties>
+                        <!-- Dev mode (jetty:run) sends no Vaadin usage statistics; the old app sent nothing.
+                             Production mode collects none. -->
+                        <vaadin.devmode.usageStatistics.enabled>false</vaadin.devmode.usageStatistics.enabled>
+                    </systemProperties>
+                </configuration>
             </plugin>
         </plugins>
     </build>
