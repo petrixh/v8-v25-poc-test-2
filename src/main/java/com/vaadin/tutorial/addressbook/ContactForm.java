@@ -138,6 +138,12 @@ public class ContactForm extends FormLayout {
         if (contact != null) {
             // Read the properties of the contact POJO to fields in this form
             formFieldBindings.readBean(contact);
+            // As the Vaadin 8 DateField: an empty birth date opens the
+            // calendar on today, not on the month of the contact shown before.
+            // The date picker keeps the last opened month in its calendar and
+            // prefers it over initialPosition; Flow has no API to reset it.
+            birthDate.getElement().executeJs(
+                    "if (this._overlayContent) this._overlayContent.initialPosition = new Date()");
             firstName.focus();
         }
         setVisible(contact != null);
