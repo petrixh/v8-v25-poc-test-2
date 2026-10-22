@@ -37,7 +37,15 @@ ENV APP_PRODUCTION_MODE=true
 EXPOSE 8080
 ENTRYPOINT []
 # Last, so a new commit does not invalidate the dependency layers above.
+# The base image's own OCI labels (Maven's description, source, url, version) are replaced.
 ARG GIT_COMMIT=unknown
+ARG IMAGE_TAG=unknown
 LABEL org.opencontainers.image.title="addressbook-old" \
-      org.opencontainers.image.revision="${GIT_COMMIT}"
+      org.opencontainers.image.description="Addressbook (old app) test environment: mvn jetty:run on JDK 21, Vaadin production mode by default. See env/README.md" \
+      org.opencontainers.image.revision="${GIT_COMMIT}" \
+      org.opencontainers.image.version="${IMAGE_TAG}" \
+      org.opencontainers.image.base.name="maven:3.9.11-eclipse-temurin-21" \
+      org.opencontainers.image.source="" \
+      org.opencontainers.image.url="" \
+      org.opencontainers.image.ref.name=""
 CMD ["sh", "-c", "exec mvn -o -Djetty.port=8080 -Dvaadin.productionMode=\"$APP_PRODUCTION_MODE\" jetty:run"]

@@ -15,12 +15,13 @@ done
 image="${IMAGE_NAME}:$(image_tag)"
 if $build; then
   log "building $image"
-  docker build -t "$image" --build-arg "GIT_COMMIT=$(image_commit)" "$REPO_DIR"
+  docker build -t "$image" --build-arg "GIT_COMMIT=$(image_commit)" --build-arg "IMAGE_TAG=${image#*:}" "$REPO_DIR"
 elif ! docker image inspect "$image" >/dev/null 2>&1; then
   die "image $image not found; run without --no-build first"
 fi
 
-case "$(container_state)" in
+state="$(container_state)"
+case "$state" in
   ours) log "replacing the existing copy"; docker rm -f "$APP_ENV_CONTAINER" >/dev/null ;;
   foreign) die "a container named $APP_ENV_CONTAINER exists and was not started by this env; not touching it" ;;
 esac

@@ -4,7 +4,8 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
 
-case "$(container_state)" in
+state="$(container_state)"
+case "$state" in
   absent) log "no container, nothing to stop" ;;
   foreign) log "WARN: container $APP_ENV_CONTAINER was not started by this env; leaving it alone" ;;
   ours) docker rm -f "$APP_ENV_CONTAINER" >/dev/null; log "removed" ;;
