@@ -7,6 +7,8 @@ designed. Please note this example requires Java 21 and Maven 3.9.
 
 ![Addressbook Screenshot](addressbook_screenshot.png "Addressbook Screenshot")
 
+The contact list with a contact open in the form (Vaadin 25, Lumo theme). The hand-off document for the migration from Vaadin 8 is [docs/handoff.md](docs/handoff.md) ([PDF](docs/handoff.pdf)).
+
 
 Running the example from the command line
 -------------------
@@ -59,50 +61,8 @@ $ env/up.sh
 Open [http://localhost:8080/](http://localhost:8080/). `env/reset.sh` returns it to the seed contacts and `env/down.sh` stops it. Ports, names and several copies side by side: see [env/README.md](env/README.md).
 
 
-Importing in IntelliJ IDEA 14
+Importing in an IDE
 --------------------
-These instructions were tested on IntelliJ IDEA 14 CE. You can get it from https://www.jetbrains.com/idea/
+The project is a plain Maven war project (`pom.xml`, Java 21). Clone this repository, open or import it as a Maven project in IntelliJ IDEA, Eclipse or NetBeans with a JDK 21, and run the Maven goal `jetty:run` (development mode) or `jetty:run-war` (production mode) from the IDE's Maven tool window; the project shows there as "Vaadin Addressbook example". Then open [http://localhost:8080/](http://localhost:8080/). These IDE steps are generic and were not tested with a particular IDE version; the command-line steps above are the tested ones.
 
-To get the project up and running in IDEA, do:
-- File -> New -> Project from Version Control -> Git
-- The URL to use is https://github.com/vaadin/addressbook.git
-- If you get a message about "Non-managed pom.xml file found". Choose "Add as Maven Project"
-- If you get a message about no JDK or SDK being selected. Choose "Configure" and select your installed JDK. You can also set the JDK using File -> Project Structure
-- To start the project, find the "Maven Projects" tab on the right hand side of the screen and navigate to
-  - Vaadin Web Application -> Plugins -> jetty -> jetty:run
-  - Click the play button or right click and select Run (Select Debug instead to run in debug mode)
-
-You should now have a Jetty server running on localhost:8080. Navigate to http://localhost:8080 to play with the application
-
-Importing in NetBeans 8
---------------------
-These instructions were tested on NetBeans 8.0.2. You can get it from https://www.netbeans.org
-
-To checkout and run the project in NetBeans, do:
-- Team -> Git -> Clone
-- Set repository URL to https://github.com/vaadin/addressbook.git
-- Finish
-- Right click the imported project (Vaadin Addressbook Application) and select Run
-- Select GlassFish Server 4.1 -> Remember in Current IDE Session -> OK
-
-You should now have a GlassFish server running on localhost:8080 and a browser tab should also be automatically opened with this location
-
-Importing in Eclipse
---------------------
-These instructions were tested on Eclipse IDE for Java EE Developers Luna SR2. You can get it from http://eclipse.org/downloads/
-
-To checkout and run the project in Eclipse, do:
-- File -> Import...
-- Check out Maven Projects from SCM
-- Choose Git from SCM menu
-  - If you do not see "Git" in the SCM menu, click "Find more SCM connectors in the m2e Marketplace" and install "m2e-egit". Restart Eclipse and start over.
-- Set the repository URL to https://github.com/vaadin/addressbook.git
-- Right click the imported "addressbook" and choose Run As -> Maven Build...
-  - Set the goal to "jetty:run" and click "Run"
-
-You should now have a Jetty server running on localhost:8080. Navigate to [http://localhost:8080/](http://localhost:8080/) to play with the application
-
-To use the built in server adapters of Eclipse, instead of doing "Run As -> Maven Build..." you can do
-- Run As -> Run on Server
-- Select the server you want to run on: a Jakarta EE 11 (Servlet 6.1) container, such as Jetty 12.1 (ee11, as used by `mvn jetty:run`), and click ok
-- *Do not use the suggested J2EE Preview server* as it is outdated, deprecated and does not support Servlet 6.1, which is required for this application
+To use an IDE's own server adapter instead, choose a Jakarta EE 11 (Servlet 6.1) container, such as Jetty 12.1 (ee11, as used by `mvn jetty:run`). Older servers (Servlet 3 or 4, `javax.servlet`, for example GlassFish 4 or Tomcat 8 and 9) cannot run this version of the app.
