@@ -2,12 +2,12 @@
 title: Addressbook, Vaadin 8 to Vaadin 25
 subtitle: Hand-off document
 kicker: Migration hand-off
-version: Draft 1
-date: 2026-10-22
-status: Draft, written before the customer's answers on the open decisions (section 7)
+version: 1.0
+date: 2026-10-23
+status: Final, on the customer's answers of 23 October 2026 (section 7)
 header: Addressbook migration hand-off
 audience: Product owner, operators and developers of the Addressbook app
-notice: The open decisions in section 7 are written on the recommended answers where one exists and are marked "pending the customer's answer". This document is regenerated from its Markdown source (docs/handoff.md) once they are answered.
+notice: Every decision in section 7 was made by the customer on 23 October 2026; no decision is open. This document is generated from its Markdown source (docs/handoff.md).
 ---
 
 [[TOC]]
@@ -16,30 +16,31 @@ notice: The open decisions in section 7 are written on the recommended answers w
 
 <div class="exec">
 
-**Outcome.** The Addressbook app now runs on Vaadin 25 (25.3.3, the free `vaadin-core` components only), Java 21 and Jetty 12.1. It has the same single screen as before: a filter field, a "New contact" button, the contact list, and a form with Save and Cancel that opens when a contact is selected. The data is still the in-memory demo list of 100 contacts. All 11 user workflows recorded on the old app run to the end on the new app. Eight give the same results, or differ only as already agreed; three show small differences that wait for your decision (section 7). The app is built, started, smoke-checked and tested end to end in CI on every push.
+**Outcome.** The Addressbook app now runs on Vaadin 25 (25.3.3, the free `vaadin-core` components only), Java 21 and Jetty 12.1. It has the same single screen as before: a filter field, a "New contact" button, the contact list, and a form with Save and Cancel that opens when a contact is selected. The data is still the in-memory demo list of 100 contacts. All 11 user workflows recorded on the old app were run on the new app step by step: 11 of 11 meet the agreed acceptance bar. Eight give the same results step for step; the other three each show a small difference, which you accepted on 23 October 2026 (section 7). The app is built, started, smoke-checked and tested end to end in CI on every push.
 
 **What changed.**
 
 - For users: a new look (Vaadin's Lumo theme instead of Valo) with the same layout, fields, buttons and data; a new calendar popup; small differences in messages and keyboard behaviour (section 2.1).
 - For operators: a Jakarta EE 11 / Servlet 6.1 container (Jetty 12.1) on Java 21 instead of Jetty 9.2 on Java 8 bytecode; production mode is now decided when the war is built; a new set of runtime dependencies under Apache 2.0 or MIT; JUnit, used only by the tests and not shipped, is EPL 2.0 (section 2.2).
 - For developers: Vaadin Flow's Java API instead of the Vaadin 8 API and its Vaadin 7 compatibility components; 7 unit tests and 10 end-to-end tests, where the old app had none (section 2.3).
-- Most of these changes still wait for your confirmation (section 7); sections 2.1 to 2.3 give the status of each.
+- You accepted all of these changes; sections 2.1 to 2.3 say when each was decided, and section 7 lists your decisions of 23 October 2026.
 
 **Risks.**
 
 - commons-beanutils 1.9.2 stays, as agreed, with two known vulnerabilities (and one more in commons-collections 3.2.1, which it pulls in). The app only copies its own contact objects with it, so exposure is low. Removing it is a small follow-up (section 6).
 - In production mode a server-side error is not visible to the user or in the browser console; only the server log shows it. CI fails on any error in the server log.
 - The end-to-end tests wait on an internal Vaadin client object; a future Vaadin update can make them flaky without warning (section 6).
+- The birth-date workflow has no end-to-end test yet. It was checked step by step against the old app, but CI does not run it. Adding that test is the first follow-up (section 6).
 
-**Decisions needed from you.** 21 items, each with a recommendation (section 7): one choice between keeping a calendar difference and taking a fix; eight small behaviour and look changes to confirm, including the missing browser tab icon (section 7.1); eleven changes made by the migration to how the app is built, run, logged and tested, what it is built from, and its layout (section 7.2); and where the migrated code ends up in your repository (section 7.3). The recommendation for each is to accept the change as it is: on the calendar, accept the difference rather than take the fix; usage statistics stay off; the old and new branches stay side by side.
+**Decisions made.** On 23 October 2026 you answered all 21 items, each as recommended (section 7). On the calendar, the difference is accepted and the prepared fix is not taken. The eight small behaviour and look changes, including the missing browser tab icon, and the eleven changes to how the app is built, run, logged and tested, what it is built from, and its layout, are accepted; usage statistics stay off. The migrated app stays on `mig-dev`, beside the old app on `main`. No decision is open.
 
 </div>
 
 # What changed
 
-This chapter lists only the changes recorded in the migration's change register. Each change says whether you accepted it earlier or it is pending your answer, with the recommended answer; section 7 lists the pending ones.
+This chapter lists only the changes recorded in the migration's change register. Each change says when you accepted it: at an earlier milestone, or with your answers of 23 October 2026 (section 7).
 
-The migration started from your app on Vaadin 8.0.0.alpha2, a pre-release that is only available from a Vaadin pre-release repository. The first step was to bring it to Vaadin 8.14.5 (a free Vaadin 8 release from Maven Central) without other changes, and to add CI and a Docker environment. That stabilised Vaadin 8 app is the reference the new app was compared with. It is on the `main` branch of the output repository; the migrated app is on `mig-dev`.
+The migration started from your app on Vaadin 8.0.0.alpha2, a pre-release that is only available from a Vaadin pre-release repository. The first step was to bring it to Vaadin 8.14.5 (a free Vaadin 8 release from Maven Central) without other changes, and to add CI and a Docker environment. That stabilised Vaadin 8 app is the reference the new app was compared with. It is on the `main` branch of the output repository; the migrated app is on `mig-dev`, and stays there (your decision of 23 October 2026).
 
 ## For users
 
@@ -47,23 +48,23 @@ The migration started from your app on Vaadin 8.0.0.alpha2, a pre-release that i
 
 | Area | Old (Vaadin 8) | New (Vaadin 25) | Status |
 |---|---|---|---|
-| Look | Valo theme | Lumo theme: grey-filled fields, plain buttons, no grid column lines, pale row selection, system font, white background. Same layout: list on the left, a one-column form with labels to the left of the fields on the right, Save and Cancel above the fields, the same margins. About 21 rows visible at 1400 x 900 (old 19.5) | Theme chosen at the first milestone (Lumo). The restored layout: pending your answer (recommended: accept) |
+| Look | Valo theme | Lumo theme: grey-filled fields, plain buttons, no grid column lines, pale row selection, system font, white background. Same layout: list on the left, a one-column form with labels to the left of the fields on the right, Save and Cancel above the fields, the same margins. About 21 rows visible at 1400 x 900 (old 19.5) | Theme chosen at the second milestone (Lumo). The restored layout: accepted on 23 October 2026 |
 | Birth date in the alpha | Dates shown with a trailing comma, typed dates rejected | Fixed by the Vaadin 8.14.5 upgrade and kept: `6/11/59`, typed dates save | Old bug not copied |
-| Birth date field | `M/d/yy`, typed dates accepted | Same format and typing. A typed two-digit year in the boundary year is read by year, not by day (example: `10/22/46` typed in 2026 is stored as 1946, the old app stored 2046). The date order is always the US one, also for an en-GB browser | Pending your answer (recommended: accept; section 7) |
-| Birth date after Save | Saving an untouched contact kept the time of day of the demo data | Save stores the birth date at midnight, so text that matched a time of day in the filter no longer matches a saved contact | Accepted at the start of the migration |
-| Invalid birth date | Red border and "!" marker; the message only as a tooltip | "Date format not recognized" under the field as soon as you leave it. Save does nothing in both | Pending your answer (recommended: accept) |
-| Calendar popup | One month with arrows | Scrolling months with a year column, Today and Cancel buttons. Same function | Pending your answer (recommended: accept) |
-| Calendar for a new contact | Opens on the current month | Opens on the month last shown in this browser tab (for example June 1959 after looking at George White) | Pending your answer: accept, or take a fix (recommended: accept) |
-| Enter with the calendar open | First Enter picks the day, a second Enter saves | One Enter picks the day and saves | Pending your answer (recommended: accept) |
-| Clicking a field's label | Did nothing | Puts the cursor in the field | Pending your answer (recommended: accept, a small improvement) |
-| "Saved" and "Cancelled" messages | Stayed until the mouse moved or a key was pressed, then closed about 3 s later | Close by themselves after 3 s. Same text and place (bottom right) | Pending your answer (recommended: accept) |
-| After a server restart or outage | "Session Expired" or "Communication problem" messages | No message after a restart; the next click reloads the page and is lost. During an outage a striped bar "Connection lost, trying to reconnect..." shows, and the page reloads by itself when the server is back | Accepted at the first milestone |
-| Other addresses | Any path showed the screen | Still any path shows the screen; a trailing slash is dropped from the address bar (`/foo/` shows as `/foo`). `/VAADIN/` answers 404 (old 403); `/HEARTBEAT/` shows the screen (old 403) | Accepted at the first milestone |
-| Browser tab icon | Vaadin's default icon from the Valo theme | The browser's default icon (the app never had its own) | Pending your answer (recommended: accept; adding an icon is parked, section 6) |
+| Birth date field | `M/d/yy`, typed dates accepted | Same format and typing. A typed two-digit year in the boundary year is read by year, not by day (example: `10/22/46` typed in 2026 is stored as 1946, the old app stored 2046). The date order is always the US one, also for an en-GB browser | Accepted on 23 October 2026 |
+| Birth date after Save | Saving an untouched contact kept the time of day of the demo data | Save stores the birth date at midnight, so text that matched a time of day in the filter no longer matches a saved contact | Accepted at the first milestone |
+| Invalid birth date | Red border and "!" marker; the message only as a tooltip | "Date format not recognized" under the field as soon as you leave it. Save does nothing in both | Accepted on 23 October 2026 |
+| Calendar popup | One month with arrows | Scrolling months with a year column, Today and Cancel buttons. Same function | Accepted on 23 October 2026 |
+| Calendar for a new contact | Opens on the current month | Opens on the month last shown in this browser tab (for example June 1959 after looking at George White) | Accepted on 23 October 2026; the prepared fix is not taken |
+| Enter with the calendar open | First Enter picks the day, a second Enter saves | One Enter picks the day and saves | Accepted on 23 October 2026 |
+| Clicking a field's label | Did nothing | Puts the cursor in the field | Accepted on 23 October 2026 |
+| "Saved" and "Cancelled" messages | Stayed until the mouse moved or a key was pressed, then closed about 3 s later | Close by themselves after 3 s. Same text and place (bottom right) | Accepted on 23 October 2026 |
+| After a server restart or outage | "Session Expired" or "Communication problem" messages | No message after a restart; the next click reloads the page and is lost. During an outage a striped bar "Connection lost, trying to reconnect..." shows, and the page reloads by itself when the server is back | Accepted at the second milestone |
+| Other addresses | Any path showed the screen | Still any path shows the screen; a trailing slash is dropped from the address bar (`/foo/` shows as `/foo`). `/VAADIN/` answers 404 (old 403); `/HEARTBEAT/` shows the screen (old 403) | Accepted at the second milestone |
+| Browser tab icon | Vaadin's default icon from the Valo theme | The browser's default icon (the app never had its own) | Accepted on 23 October 2026; adding an icon is follow-up work (section 6) |
 
 ## For operators
 
-Every change in this table is pending your answer, recommended: accept (section 7.2), except the parts a row marks as accepted earlier.
+You accepted every change in this table on 23 October 2026 (section 7.2), except the parts a row marks as accepted earlier.
 
 | Area | Old | New |
 |---|---|---|
@@ -71,17 +72,17 @@ Every change in this table is pending your answer, recommended: accept (section 
 | Servlet container | Jetty 9.2.3 (`jetty-maven-plugin`), `javax.servlet` 3.0 | Jetty 12.1.14 `ee11` (`jetty-ee11-maven-plugin`), `jakarta.servlet` 6.1. Deploy on a Jakarta EE 11 / Servlet 6.1 container |
 | Java | Java 8 bytecode | Java 21 (`release` 21); build and run on JDK 21 |
 | Production mode | Hard-coded off in the code; only the env and CI forced it on at start | Decided at build time: the war from `mvn package` always runs in production mode; `mvn jetty:run` is development mode. The env and CI switch (`APP_ENV_PRODUCTION_MODE`) keeps its meaning but now rejects any value other than `true` or `false` |
-| Dependencies | jsoup 1.14.3 (a known vulnerability), the unmaintained Vaadin 8 line with its warning banner, the `vaadin-prereleases` and `vaadin-addons` repositories | New runtime jars under Apache 2.0 or MIT: Jackson 3, Atmosphere, Reactor, collaboration-engine, Lumo and Aura; jsoup 1.23.2. The servlet API, which the server provides, is EPL 2.0. `jspecify` in the war moves from 1.0.0 to 1.0.1 (annotations only, Apache 2.0), because the test library needs the newer version. Test only, not in the war: JUnit 6 (EPL 2.0) and Playwright for Java (Apache 2.0). Only Maven Central is used. commons-beanutils 1.9.2 unchanged |
+| Dependencies | jsoup 1.14.3 (a known vulnerability), the unmaintained Vaadin 8 line with its warning banner, the `vaadin-prereleases` and `vaadin-addons` repositories | New runtime jars under Apache 2.0 or MIT: Jackson 3, Atmosphere, Reactor, collaboration-engine, Lumo and Aura; jsoup 1.23.2. The servlet API, which the server provides, is EPL 2.0 or GPLv2 with the Classpath Exception. `jspecify` in the war moves from 1.0.0 to 1.0.1 (annotations only, Apache 2.0), because the test library needs the newer version. Test only, not in the war: JUnit 6 (EPL 2.0) and Playwright for Java (Apache 2.0). Only Maven Central is used. commons-beanutils 1.9.2 unchanged |
 | Logging | Jetty's and Vaadin 8's log lines | `slf4j-simple` 2.0.17: Vaadin's lines as `[thread] LEVEL logger - message` on stderr. Every start logs three `[WARNING] The XML schema [...] could not be found` lines from Jetty 12; they are harmless and the log check ignores them |
-| Docker environment | Image `addressbook-old`, start about 2.5 s | Image `addressbook-new:<commit>` (about 1.4 GB), same `env/up.sh`, `reset.sh`, `down.sh`; every production-mode start and reset rebuilds the war offline and runs the unit tests first (about 5 s); a failing test stops that copy from starting (accepted at the first milestone). Development-mode copies (`APP_ENV_PRODUCTION_MODE=false`) do not run the tests |
-| Dev-mode tools | `?debug` window | Vaadin's dev tools and Copilot in development mode only; none of it is in the war. Usage statistics are switched off for every development run (recommended: keep off). Copilot checks its release notes at copilot.vaadin.com (only the Vaadin version is sent; accepted at the first milestone); when offline this logs an error in development mode |
+| Docker environment | Image `addressbook-old`, start about 2.5 s | Image `addressbook-new:<commit>` (about 1.4 GB), same `env/up.sh`, `reset.sh`, `down.sh`; every production-mode start and reset rebuilds the war offline and runs the unit tests first (about 5 s); a failing test stops that copy from starting (accepted at the second milestone). Development-mode copies (`APP_ENV_PRODUCTION_MODE=false`) do not run the tests |
+| Dev-mode tools | `?debug` window | Vaadin's dev tools and Copilot in development mode only; none of it is in the war. Usage statistics are switched off for every development run (kept off, decided on 23 October 2026). Copilot checks its release notes at copilot.vaadin.com (only the Vaadin version is sent; confirmed at the second milestone); when offline this logs an error in development mode |
 
 ## For developers
 
-The changes below are pending your answer, recommended: accept (section 7.2), except the routes, accepted earlier.
+You accepted the changes below on 23 October 2026 (section 7.2), except the routes, accepted earlier.
 
 - **API:** every class uses Vaadin Flow (`com.vaadin.flow.*`) instead of the Vaadin 8 API (`com.vaadin.ui`: layouts, buttons, notifications) and its Vaadin 7 compatibility components (`com.vaadin.v7`: grid, text and date fields, field group): `Grid`, `FormLayout`, `Binder`, `DatePicker`, `Notification`. The four app classes keep their names and roles; `AppShell` is new and loads the Lumo theme.
-- **Routes:** the screen is at `/` and at any other path (`@RouteAlias(":path*")`), as the old servlet mapping did (accepted at the first milestone).
+- **Routes:** the screen is at `/` and at any other path (`@RouteAlias(":path*")`), as the old servlet mapping did (accepted at the second milestone).
 - **Build:** `vaadin-maven-plugin` 25.3.3 adds a frontend step to every `mvn package` (it uses Vaadin's pre-built production bundle, so no Node run is needed). `maven-compiler-plugin` 3.14.1, surefire and failsafe 3.6.0 pinned. `vaadin-dev` is an optional dependency, so it is on the development classpath only.
 - **Tests (new):** 7 JUnit 6 unit tests of the backend (storage returns copies; the 100 demo contacts match the original app's). 10 end-to-end tests in Playwright for Java 1.63.0, one per workflow that passed the old vs new comparison. They need a freshly started app, run in a fixed order, and add about 200 MB to every Maven repository and to the Docker image, because every build compiles them. See section 3.4.
 - **CI:** one GitHub Actions job builds, starts the app in production mode, smoke-checks it, runs the end-to-end tests and fails on any error in the server log (section 3.5).
@@ -128,7 +129,7 @@ mvn verify -Pe2e -Dapp.url=http://localhost:8080
 
 The contacts are in memory and the tests change them, so restart the app before each end-to-end run; a second run against the same app fails. Playwright downloads Chromium on the first run; set `PLAYWRIGHT_BROWSERS_PATH` and `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` to use browsers you already have. Failure screenshots go to `target/e2e-failures/`.
 
-The workflow "Enter a birth date with the calendar and by typing" has no end-to-end test yet: it waits for the decision in section 7.
+The workflow "Enter a birth date with the calendar and by typing" has no end-to-end test yet. It was left out so that the reviewed test set did not change after its review; adding it, with its calendar step checking the accepted position, is follow-up work (section 6).
 
 ## CI
 
@@ -163,16 +164,18 @@ These issues were in the stabilised Vaadin 8 app that the new app was compared w
 
 # Old and new side by side
 
-The 11 user workflows recorded on the old app were run on the new app step by step and compared screenshot by screenshot. The walkthrough shipped next to this document shows each workflow with the old and new screenshots of every step and a note on each difference: [docs/walkthrough/index.html](walkthrough/index.html) (open it in a browser; it needs no server). It shows 10 of the 11 workflows; the birth-date calendar workflow is added after your answer on the calendar (item 1 under "Open decisions").
+The 11 user workflows recorded on the old app were run on the new app step by step and compared screenshot by screenshot. The walkthrough shipped next to this document shows each workflow with the old and new screenshots of every step and a note on each difference: [docs/walkthrough/index.html](walkthrough/index.html) (open it in a browser; it needs no server). It shows all 11 workflows, and each difference you accepted on 23 October 2026 is captioned as accepted.
+
+**Result: 11 of 11 workflows meet the acceptance bar: 8 step for step, 3 with accepted differences.**
 
 ![The old app (Vaadin 8.14.5, Valo) with the same contact open, 1400 x 900 window. Compare with figure 1.](img/old-contact-open.png "The old app (Vaadin 8.14.5, Valo) with the same contact open, 1400 x 900 window. Compare with figure 1.")
 
 | Workflow | Result |
 |---|---|
 | Browse the contact list; filter it; open and close a contact; add, edit, cancel; save with missing values; see another user's changes | Same behaviour. About one more row is visible with Lumo (accepted with the theme) |
-| Try to save an invalid birth date | Same result; the message shows under the field (pending your answer) |
-| Two users edit the same contact | Same result; the "Saved" message closes by itself (pending your answer) |
-| Enter a birth date with the calendar and by typing | Differs in one step: the calendar for a new contact opens on the last month shown (pending your answer) |
+| Try to save an invalid birth date | Same result, with an accepted difference: the message shows under the field |
+| Two users edit the same contact | Same result, with an accepted difference: the "Saved" message closes by itself after 3 s |
+| Enter a birth date with the calendar and by typing | Same result, with an accepted difference: the calendar for a new contact opens on the last month shown, and the calendar has its new layout |
 
 # Possible follow-up work
 
@@ -194,7 +197,7 @@ Improvements that are not needed for the migration and were left out on purpose.
 
 - Replace the fixed waits in the end-to-end tests and the wait on Vaadin's internal client object with waits on what the page shows.
 - Give the demo-data unit test its own contact service, so test order cannot matter later.
-- Add the end-to-end test for the birth-date workflow once section 7 is decided.
+- Add the end-to-end test for the birth-date workflow: its steps as on the old app, with the calendar step checking the accepted position. It is the only workflow without one.
 
 **Dependencies and code:**
 
@@ -202,50 +205,48 @@ Improvements that are not needed for the migration and were left out on purpose.
 - Store the birth date as a date without time (`LocalDate`) instead of converting in the form; this removes the time-zone and time-of-day handling.
 - Run the war on a slim Jetty image instead of Maven and a JDK in the Docker image (smaller and faster to pull).
 
-# Open decisions
+# Decisions made
 
-21 items wait for your answer. The migration team's recommendation is given for each. The shortest answer is "all as recommended", or "all as recommended except" the items you want differently.
+On 23 October 2026 you answered all 21 items, each as recommended. No decision is open.
 
-## Behaviour and look differences to accept or reject
+## Behaviour and look differences
 
-| # | Difference | Options | Recommendation |
-|---|---|---|---|
-| 1 | Calendar for a new contact opens on the month last shown in the tab, not on the current month | A: accept the difference. B: take a prepared fix, which works by setting an internal value of Vaadin's date picker from JavaScript; it is tested, but a Vaadin update can break it silently in the app (the workflow test would catch it) | A, accept: a small difference that comes from Vaadin's own component |
-| 2 | A typed two-digit year in the boundary year is read by year, not by day | Accept, or ask for the old reading | Accept: framework behaviour |
-| 3 | The date order is always the US one (month/day/year), also for non-US English browsers | Accept, or ask for the browser's date order | Accept: the users are US English |
-| 4 | Clicking a field's label puts the cursor in the field | Accept, or ask to remove it | Accept: a small improvement |
-| 5 | The calendar popup has a new layout (scrolling months, year column, Today and Cancel) | Accept, or ask for a restyle | Accept: look only, same function |
-| 6 | "Saved" and "Cancelled" close by themselves after 3 s | Accept, or ask for a longer time or a close button | Accept: framework behaviour with no setting; the message and the save are the same |
-| 7 | "Date format not recognized" shows under the field instead of as a tooltip | Accept, or ask for the old marker | Accept: Vaadin 25 shows field errors under the field; same text, same outcome |
-| 8 | With the calendar open, one Enter picks the day and saves | Accept, or ask for the old two-step Enter | Accept: the same value is stored; one keystroke less |
-| 9 | The browser tab shows the browser's default icon instead of the Vaadin logo | Accept, or ask for an icon now | Accept, with adding an icon left for later (section 6): the old icon came from the old theme, which no longer exists |
-
-Until these are answered, the workflows "Enter a birth date", "Try to save an invalid birth date" and "Two users edit the same contact" are counted as not yet accepted.
-
-## Changes made by the migration, to confirm
-
-These are the changes in sections 2.2 and 2.3 and the restored layout. Users see none of them except the layout.
-
-| # | Change | Recommendation |
+| # | Difference | Decision (23 October 2026) |
 |---|---|---|
-| 10 | Runs on Java 21 and Jetty 12.1 (Servlet 6.1, Jakarta EE 11) instead of Jetty 9.2 and Java 8; a deployed war needs both | Accept: required by Vaadin 25 |
-| 11 | A built war always runs in production mode; development mode is `mvn jetty:run`. The env switch rejects values other than `true` or `false`; env starts take about 5 s (old about 2.5 s) | Accept: how Vaadin 25 works, and no debug mode in a deployed war |
-| 12 | New server log format, and three harmless Jetty warnings at every start, which the CI log check ignores | Accept: comes with the new logging and Jetty; no errors |
-| 13 | The Docker test environment's image is renamed (`addressbook-new`) and larger (about 1.4 GB plus about 204 MB for the test library); same scripts | Accept: the same environment on Vaadin 25; a test environment, not a deployment |
-| 14 | CI makes a Vaadin 25 production build, starts it, smoke-checks it, checks production mode, runs the end-to-end tests and fails on any server-log error | Accept: same purpose as before, stricter |
-| 15 | The build has a Vaadin frontend step (no Node run) and compiles for Java 21 | Accept: needed for a Vaadin 25 production build |
-| 16 | Ten end-to-end browser tests come with the app; restart the app before a run | Accept: the passed workflows become tests, as agreed |
-| 17 | Development runs send no usage statistics to Vaadin (switched off in the build); production builds never send any. One send went out from a development run during the migration, before it was switched off | Keep off: the old app sent nothing |
-| 18 | Vaadin 8.14.5 replaced by Vaadin 25.3 and its libraries (Apache 2.0 or MIT; the servlet API EPL 2.0, provided by the server); jsoup's known vulnerability and the add-ons repository are gone; `jspecify` 1.0.0 to 1.0.1 in the war; JUnit 6 (EPL 2.0) for the tests only | Accept: the migration itself; no new kind of licence in the war |
-| 19 | Vaadin's development tools (dev server, dev tools, Copilot) are on the development classpath only and never ship in the war; no licence key | Accept: the standard Vaadin 25 setup |
-| 20 | The old arrangement is back: list on the left, one-column form with labels beside the fields, the old margins, columns sized to their content | Accept: restores the old layout |
+| 1 | Calendar for a new contact opens on the month last shown in the tab | Option A: accepted; the prepared fix is not taken, so the app relies on no internal part of Vaadin's date picker |
+| 2 | A typed two-digit year in the boundary year is read by year, not by day | Accepted |
+| 3 | The date order is always month/day/year | Accepted |
+| 4 | Clicking a field's label puts the cursor in the field | Accepted |
+| 5 | The new calendar popup layout | Accepted |
+| 6 | "Saved" and "Cancelled" close by themselves after 3 s | Accepted |
+| 7 | "Date format not recognized" shows under the field | Accepted |
+| 8 | With the calendar open, one Enter picks the day and saves | Accepted |
+| 9 | The browser's default tab icon | Accepted; adding an icon is follow-up work (section 6) |
+
+With these, the workflows "Enter a birth date", "Try to save an invalid birth date" and "Two users edit the same contact" pass with accepted differences.
+
+## Changes made by the migration
+
+| # | Change | Decision (23 October 2026) |
+|---|---|---|
+| 10 | Java 21 and Jetty 12.1 (Servlet 6.1, Jakarta EE 11) | Accepted |
+| 11 | A built war always runs in production mode; the env switch takes only `true` or `false` | Accepted |
+| 12 | New server log format and three harmless Jetty warnings at start | Accepted |
+| 13 | Renamed and larger Docker image (`addressbook-new`) | Accepted |
+| 14 | The stricter CI | Accepted |
+| 15 | The Vaadin frontend build step and Java 21 compilation | Accepted |
+| 16 | Ten end-to-end browser tests and their test library | Accepted |
+| 17 | No usage statistics from development runs | Kept off |
+| 18 | The Vaadin 25 dependency set (Apache 2.0 or MIT; the server-provided servlet API EPL 2.0 or GPLv2 with the Classpath Exception; JUnit EPL 2.0, tests only) | Accepted |
+| 19 | Vaadin's development tools on the development classpath only | Accepted |
+| 20 | The restored layout | Accepted |
 
 ## Where the migrated code ends up
 
-| # | Question | Options | Recommendation |
-|---|---|---|---|
-| 21 | Where should the migrated app end up? The output repository has the stabilised Vaadin 8 app on `main` and the migrated Vaadin 25 app on `mig-dev` | A: keep both branches side by side. B: merge `mig-dev` into `main`, replacing the old app (it stays reachable through the `baseline-green` tag). C: something else, for example another repository | A, keep both: the output repository exists to compare the old and new versions |
+| # | Question | Decision (23 October 2026) |
+|---|---|---|
+| 21 | Where the migrated app ends up | Option A: the Vaadin 25 app stays on `mig-dev`, beside the old app on `main`. Both stay runnable and can be compared side by side; nothing is merged into `main` |
 
 ## Acceptance
 
-After these answers, the remaining steps are a walkthrough of this document with you and your acceptance of the migration.
+With these answers, the remaining steps are a walkthrough of this document with you and your acceptance of the migration.
