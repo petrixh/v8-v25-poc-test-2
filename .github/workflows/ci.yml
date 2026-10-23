@@ -1,4 +1,4 @@
-# Build, start and smoke-check the app. See ci/README.md for what this does and how to run it locally.
+# Build, start, smoke-check and end-to-end test the app. See ci/README.md for what this does and how to run it locally.
 # One job on purpose: the built app is never handed between jobs through artifact storage
 # (CI storage quota). Diagnostics are uploaded only on failure.
 name: CI
@@ -71,8 +71,19 @@ jobs:
       - name: Check production mode
         run: ci/check-production-mode.sh
 
+      # End-to-end tests (src/test/java/.../e2e, Playwright for Java) against the app started above. The smoke
+      # check changes no data, so the app still has the seed contacts the tests expect. The Playwright version
+      # matches ci/package-lock.json, so the Chromium installed above is used; nothing is downloaded.
+      - name: End-to-end tests
+        id: e2e
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+        run: mvn -B verify -Pe2e "-Dapp.url=http://localhost:$APP_PORT"
+
       # Production mode hides client errors from the browser console; server errors show up here.
+      # Runs after the end-to-end tests, so it also covers what they did, and also when they failed.
       - name: Check server log for errors
+        if: ${{ !cancelled() && steps.e2e.conclusion != 'skipped' }}
         run: ci/check-server-log.sh
 
       - name: Stop app
@@ -88,5 +99,7 @@ jobs:
           path: |
             target/jetty.log
             target/smoke/
+            target/failsafe-reports/
+            target/e2e-failures/
           retention-days: 3
           if-no-files-found: ignore

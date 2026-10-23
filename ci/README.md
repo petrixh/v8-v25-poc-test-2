@@ -1,6 +1,6 @@
 # CI
 
-`.github/workflows/ci.yml` builds the app, starts it and smoke-checks it in a browser on every push to `main`, `mig-dev`, `stage/**`, `stabilise/**` and `fix/**`, and on every pull request. It needs no secrets and no Vaadin licence key.
+`.github/workflows/ci.yml` builds the app, starts it, smoke-checks it in a browser and runs the end-to-end tests against it on every push to `main`, `mig-dev`, `stage/**`, `stabilise/**` and `fix/**`, and on every pull request. It needs no secrets and no Vaadin licence key.
 
 ## What the job does
 
@@ -12,9 +12,11 @@ One job on `ubuntu-24.04` (pinned, so the runner OS does not change underneath t
 4. `ci/start-app.sh 8080`: runs `mvn jetty:run-war` (Jetty 12.1 ee11) in the background and waits until `http://localhost:8080/` answers HTTP 200. `jetty:run-war` builds the war again first, so the unit tests run a second time here; a failing test stops the app from starting. Vaadin 25 decides production mode at build time, so running the production war is what makes it production mode. `APP_PRODUCTION_MODE=false ci/start-app.sh` runs `mvn jetty:run` instead, in development mode (not used by CI; Vaadin usage statistics off through `pom.xml`, as for every `mvn jetty:run`).
 5. `node ci/smoke.cjs http://localhost:8080 target/smoke`: opens the contact view by its route (`/`) in Chromium, waits for the contact grid to show rows, and fails on any console error, page error or HTTP response >= 400. It writes `target/smoke/smoke.png` and `target/smoke/smoke.json`.
 6. `ci/check-production-mode.sh`: fails unless the server log shows Jetty started and Vaadin logged "Vaadin is running in production mode.", and fails if it logged "Vaadin is running in DEVELOPMENT mode".
-7. `ci/check-server-log.sh`: fails if the server log has a `SEVERE` or `ERROR` line or a Java stack trace (`at ...(...)` frames, `Caused by:`, `Exception in thread`). This is the check that catches app errors in production mode: there the browser console shows no Vaadin client diagnostics, and server-side exceptions are logged while the response is still HTTP 200. Vaadin logs through SLF4J to `slf4j-simple` (`ERROR` lines on stderr, so in the log); the app's own `java.util.logging` lines show as `SEVERE`.
-8. `ci/stop-app.sh`: stops the server by its PID (always runs). It kills the PID only if it is still a java process running `jetty:run` or `jetty:run-war`.
-9. On failure only: uploads `target/jetty.log` and `target/smoke/` as the `diagnostics` artifact, kept for 3 days. A failed upload does not fail the job.
+7. `mvn -B verify -Pe2e -Dapp.url=http://localhost:8080`: the end-to-end tests (`src/test/java/.../e2e`, Playwright for Java 1.63.0 with JUnit 6, run by Maven failsafe), one test class per passed workflow of the migration's workflow catalogue (AB01-AB06 and AB08-AB11), against the app started in step 4. The smoke check changes no data, so the app still has the seed contacts the tests expect. `verify` builds the war again first (and runs the unit tests again); the running app is not affected. `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`: the tests use the Chromium installed in step 3 (same Playwright version as `ci/package-lock.json`) and download nothing. A failing step's screenshots go to `target/e2e-failures/`. See the README, "Running the tests", for the test order and data.
+8. `ci/check-server-log.sh`: fails if the server log has a `SEVERE` or `ERROR` line or a Java stack trace (`at ...(...)` frames, `Caused by:`, `Exception in thread`). This is the check that catches app errors in production mode: there the browser console shows no Vaadin client diagnostics, and server-side exceptions are logged while the response is still HTTP 200. Vaadin logs through SLF4J to `slf4j-simple` (`ERROR` lines on stderr, so in the log); the app's own `java.util.logging` lines show as `SEVERE`.
+   It runs after the end-to-end tests, so it covers what they did, and it runs when they failed too.
+9. `ci/stop-app.sh`: stops the server by its PID (always runs). It kills the PID only if it is still a java process running `jetty:run` or `jetty:run-war`.
+10. On failure only: uploads `target/jetty.log`, `target/smoke/`, `target/failsafe-reports/` and `target/e2e-failures/` as the `diagnostics` artifact, kept for 3 days. A failed upload does not fail the job.
 
 On pull requests and work branches (`stabilise/**`, `fix/**`), a newer push cancels the older run. On `main`, `mig-dev` and `stage/**` runs are never cancelled, so every commit there gets a result. The checkout does not keep the job token in `.git/config` (`persist-credentials: false`).
 
@@ -32,6 +34,7 @@ mvn -B package
 ci/start-app.sh 8080                                    # any free port
 node ci/smoke.cjs http://localhost:8080 target/smoke
 ci/check-production-mode.sh
+mvn -B verify -Pe2e -Dapp.url=http://localhost:8080      # end-to-end tests; same port as above
 ci/check-server-log.sh
 ci/stop-app.sh
 ```
@@ -44,4 +47,5 @@ Then open `target/smoke/smoke.png`. It should show the filter field, the "New co
 - `ci/check-production-mode.sh` and `ci/check-server-log.sh` read the same log: the path given as their first argument, else `APP_LOG`, else `target/jetty.log`. Keep `APP_LOG` exported for the whole sequence if you change it.
 - If you set `PLAYWRIGHT_BROWSERS_PATH`, Playwright installs browsers there and looks for them there.
 - The smoke check fails, with exit code 1, if nothing answers at the URL.
-- The app keeps its contacts in memory. Restart it to reset the data.
+- The app keeps its contacts in memory. Restart it to reset the data. The end-to-end tests need a freshly started app: run `ci/stop-app.sh` and `ci/start-app.sh` again before you run them a second time.
+- The end-to-end tests use the browsers Playwright 1.63.0 installed (`npx playwright install chromium` above). Set `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` so they never download one, and `PLAYWRIGHT_BROWSERS_PATH` if your browsers are elsewhere.
